@@ -1,19 +1,28 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <section class="card">
-        <h2>Willkommen 👋</h2>
-        <p>
-            Das ist meine erste Flask-WebApp, online über Render.
-        </p>
+<section class="card">
+    <h2>Nächste Schritte</h2>
 
-        <p>
-            Hier werde ich meine Übungen und Projekte aus dem Modul
-            <strong>Informatik – Praxis</strong> sammeln.
-        </p>
+    <p>
+        Willkommen bei <strong>InformatikFit</strong> – deiner Übungsseite für die
+        Informatik-Prüfung.
+    </p>
 
-        <button class="primary-btn">
-            Noch nichts zum Klicken 😄
-        </button>
-    </section>
+    <p>Als Nächstes werde ich in diesem Projekt:</p>
+
+    <ul class="steps">
+        <li>Für jedes Prüfungsformat eine eigene Seite aufbauen.</li>
+        <li>Aufgaben und Beispielfragen zuordnen.</li>
+        <li>Auswertungen (Punkte, richtig/falsch) einbauen.</li>
+        <li>Das Design weiter verfeinern (Farben, Layout, evtl. Dark Mode).</li>
+    </ul>
+
+    <p>
+        Über das Menü oben kannst du die drei Prüfungsformate ansteuern:
+        <strong>Digitaler Informationsaustausch</strong>,
+        <strong>Datenverarbeitung</strong> und
+        <strong>Programmieren</strong>.
+    </p>
+</section>
 {% endblock %}

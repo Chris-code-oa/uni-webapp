@@ -1,16 +1,23 @@
-<!doctype html>
+!doctype html>
 <html lang="de">
 <head>
     <meta charset="utf-8">
-    <title>{{ title or "Meine Uni-WebApp" }}</title>
+    <title>{{ title or "InformatikFit" }}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <!-- Einfaches CSS -->
+    <!-- Zentrales Stylesheet -->
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
     <header class="topbar">
-        <h1>Meine Uni-WebApp</h1>
+        <h1>InformatikFit</h1>
+
+        <nav class="nav">
+            <a href="{{ url_for('home') }}">Start</a>
+            <a href="{{ url_for('digitaler_informationsaustausch') }}">Digitaler Informationsaustausch</a>
+            <a href="{{ url_for('datenverarbeitung') }}">Datenverarbeitung</a>
+            <a href="{{ url_for('programmieren') }}">Programmieren</a>
+        </nav>
     </header>
 
     <main class="content">
@@ -18,7 +25,7 @@
     </main>
 
     <footer class="footer">
-        © {{ 2025 }} Chris – Informatik Praxis
+        © {{ 2025 }} InformatikFit – Informatik Praxis
     </footer>
 </body>
 </html>
