@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Dashboard – InformatikFit{% endblock %}
+
+{% block content %}
+<div class="banner-box">
+  <h2 class="mb-2">Willkommen, {{ current_user.username }} 👋</h2>
+  <p class="mb-1">
+    Deine Gesamtpunkte: <strong>{{ current_user.total_points }}</strong>
+  </p>
+  <p class="mb-0">
+    Wähle ein Thema und arbeite an deinen Informatik-Skills.
+  </p>
+</div>
+
+<h3 class="mb-3">Meine Themenbereiche</h3>
+
+<div class="row g-3">
+  <!-- Programmieren -->
+  <div class="col-md-4">
+    <div class="card h-100 p-3">
+      <div class="d-flex flex-column h-100">
+        <div>
+          <h4>💻 Programmieren</h4>
+          <p class="text-muted">
+            Grundlagen der Programmierung und erste eigene Programme.
+          </p>
+        </div>
+        <div class="mt-auto">
+          <a href="{{ url_for('programmieren') }}" class="btn btn-primary w-100">
+            Zum Thema „Programmieren“
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Datenverarbeitung -->
+  <div class="col-md-4">
+    <div class="card h-100 p-3">
+      <div class="d-flex flex-column h-100">
+        <div>
+          <h4>📊 Datenverarbeitung</h4>
+          <p class="text-muted">
+            Wie Daten entstehen, verarbeitet und ausgewertet werden.
+          </p>
+        </div>
+        <div class="mt-auto">
+          <a href="{{ url_for('datenverarbeitung') }}" class="btn btn-primary w-100">
+            Zum Thema „Datenverarbeitung“
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Digitaler Informationsaustausch -->
+  <div class="col-md-4">
+    <div class="card h-100 p-3">
+      <div class="d-flex flex-column h-100">
+        <div>
+          <h4>🌐 Digitaler Informationsaustausch</h4>
+          <p class="text-muted">
+            Kommunikation im Netz, Übertragung von Informationen und Sicherheit.
+          </p>
+        </div>
+        <div class="mt-auto">
+          <a href="{{ url_for('digitaler_informationsaustausch') }}" class="btn btn-primary w-100">
+            Zum Thema „Digitaler Informationsaustausch“
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

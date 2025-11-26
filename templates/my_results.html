@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Meine Ergebnisse – Informatik LMS{% endblock %}
+{% block content %}
+<h2 class="mb-3">Meine Ergebnisse</h2>
+
+{% if results %}
+  <div class="card p-3">
+    <table class="table align-middle">
+      <thead>
+        <tr>
+          <th>Datum</th>
+          <th>Quiz</th>
+          <th>Quiz-Name</th>
+          <th>Punkte</th>
+          <th>Veränderung</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in results %}
+          {# vorheriger Eintrag in der Liste (falls vorhanden) #}
+          {% set prev = None %}
+          {% set diff = None %}
+          {% if not loop.last %}
+            {% set prev = results[loop.index] %}
+            {% set diff = r.points - prev.points %}
+          {% endif %}
+          <tr>
+            <td>{{ r.created_at.strftime("%d.%m.%Y %H:%M") }}</td>
+            <td>{{ loop.index }}</td>
+            <td>{{ r.quiz_name }}</td>
+            <td>{{ r.points }}</td>
+            <td>
+              {% if diff is not none %}
+                {% if diff > 0 %}
+                  <span class="text-success">+{{ diff }} 🔼</span>
+                {% elif diff < 0 %}
+                  <span class="text-danger">{{ diff }} 🔽</span>
+                {% else %}
+                  <span class="text-secondary">±0</span>
+                {% endif %}
+              {% else %}
+                –
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% else %}
+  <p>Noch keine Ergebnisse. Mach dein erstes Quiz! 🎯</p>
+{% endif %}
+{% endblock %}

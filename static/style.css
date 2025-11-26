@@ -50,3 +50,12 @@ body {
 
 /* --- Hauptbereich --- */
 .cont
+
+.card {
+    border-radius: 1rem;
+}
+
+/* Überschrift-Abstände auf dem Dashboard etwas kompakter */
+h2 {
+    margin-bottom: 0.5rem;
+}

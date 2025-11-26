@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Rangliste – Informatik LMS{% endblock %}
+{% block content %}
+<h2 class="mb-3">Rangliste 🏆</h2>
+
+<div class="card p-3">
+  <table class="table align-middle">
+    <thead>
+      <tr>
+        <th>Platz</th>
+        <th>Benutzer</th>
+        <th>Gesamtpunkte</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for user in users %}
+        <tr {% if current_user.id == user.id %}class="table-primary fw-bold"{% endif %}>
+          <td>{{ loop.index }}</td>
+          <td>{{ user.username }}</td>
+          <td>{{ user.total_points }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
