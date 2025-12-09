@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}Digitaler Informationsaustausch – Zusammenfassung{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-3">Digitaler Informationsaustausch – Zusammenfassung</h1>
+
+    <p class="mb-3">
+        Du hast bisher im Bereich <strong>Digitaler Informationsaustausch</strong>
+        insgesamt <strong>{{ dia_points }} Punkte</strong> gesammelt.
+    </p>
+
+    <p class="mb-4">
+        Was möchtest du als Nächstes lernen?
+    </p>
+
+    <div class="d-flex flex-column flex-md-row gap-2">
+        <!-- Option 1: Bereich wiederholen -->
+        <a href="{{ url_for('dia_restart') }}" class="btn btn-primary">
+            🔁 Digitalen Informationsaustausch wiederholen
+        </a>
+
+        <!-- Option 2: Datenverarbeitung -->
+        <a href="{{ url_for('datenverarbeitung') }}" class="btn btn-outline-secondary">
+            📊 Datenverarbeitung
+        </a>
+
+        <!-- Option 3: Programmieren -->
+        <a href="{{ url_for('programmieren') }}" class="btn btn-outline-secondary">
+            💻 Programmieren
+        </a>
+    </div>
+
+    <p class="mt-4 text-muted">
+        Hinweis: Beim Wiederholen werden die Aufgaben erneut durchlaufen,
+        deine bisher gesammelten Punkte bleiben erhalten.
+    </p>
+</div>
+{% endblock %}

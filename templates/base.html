@@ -103,24 +103,37 @@
             <h1 class="topbar-brand mb-0">InformatikFit</h1>
 
             <nav class="nav">
+
+                <!-- Hauptseiten -->
                 <a class="nav-link" href="{{ url_for('home') }}">Start</a>
+
                 <a class="nav-link" href="{{ url_for('digitaler_informationsaustausch') }}">
                     Digitaler Informationsaustausch
                 </a>
-                <a class="nav-link" href="{{ url_for('datenverarbeitung') }}">Datenverarbeitung</a>
-                <a class="nav-link" href="{{ url_for('programmieren') }}">Programmieren</a>
 
+                <a class="nav-link" href="{{ url_for('datenverarbeitung') }}">
+                    Datenverarbeitung
+                </a>
+
+                <a class="nav-link" href="{{ url_for('programmieren') }}">
+                    Programmieren
+                </a>
+
+                <!-- Benutzerbereich -->
                 {% if current_user.is_authenticated %}
                     <a class="nav-link" href="{{ url_for('my_results') }}">Meine Ergebnisse</a>
                     <a class="nav-link" href="{{ url_for('leaderboard') }}">Rangliste</a>
+
                     <span class="nav-link disabled">
                         👤 {{ current_user.username }} ({{ current_user.total_points }} P.)
                     </span>
+
                     <a class="nav-link" href="{{ url_for('logout') }}">Logout</a>
                 {% else %}
                     <a class="nav-link" href="{{ url_for('login') }}">Login</a>
                     <a class="nav-link" href="{{ url_for('register') }}">Registrieren</a>
                 {% endif %}
+
             </nav>
         </div>
     </header>

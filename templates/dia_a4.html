@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}DIA A4 – Heimnetzwerke mit IP-Adressen{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-1">DIA – Aufgabe A4</h1>
+
+    {% if dia_total %}
+        <p class="text-muted mb-3">
+            Fortschritt: {{ dia_progress }} von {{ dia_total }} Aufgaben im Bereich
+            „Digitaler Informationsaustausch“.
+        </p>
+    {% endif %}
+
+    <p class="mb-4">
+        Im Folgenden siehst du drei Heimnetzwerke, die mit Hilfe des Programms „Filius“ nachgebaut wurden.
+        Wähle für jedes Netzwerk aus, ob es so funktionieren kann oder welcher Fehler vorliegt.
+    </p>
+
+    {% if feedback %}
+        <div class="alert alert-info">
+            {{ feedback }}
+        </div>
+    {% endif %}
+
+    <form method="post">
+        {% for net in netzwerke %}
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">{{ net.name }}</h5>
+
+                    <div class="mb-3 text-center">
+                        <img src="{{ url_for('static', filename='img/' ~ net.image) }}"
+                             alt="{{ net.name }}"
+                             class="img-fluid"
+                             style="max-height: 220px;">
+                    </div>
+
+                    <p class="mb-2">
+                        Wähle die passende Erklärung für {{ net.name }}:
+                    </p>
+
+                    <select name="{{ net.id }}" class="form-select" required>
+                        <option value="">-- bitte auswählen --</option>
+                        {% for opt in optionen %}
+                            {% if auswahl and auswahl.get(net.id) == opt %}
+                                <option value="{{ opt }}" selected>{{ opt }}</option>
+                            {% else %}
+                                <option value="{{ opt }}">{{ opt }}</option>
+                            {% endif %}
+                        {% endfor %}
+                    </select>
+
+                    {% if geloest %}
+                        <p class="mt-2">
+                            Richtige Erklärung:
+                            <strong>{{ korrekt[net.id] }}</strong>
+                        </p>
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+
+        <button type="submit" class="btn btn-primary">
+            Antworten überprüfen
+        </button>
+
+        <a href="{{ url_for('dia_next', current='dia_a4') }}" class="btn btn-secondary ms-2">
+            Nächste Aufgabe
+        </a>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}DIA A2 – Netzwerkgrundlagen{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-1">DIA – Aufgabe A2</h1>
+
+    {% if dia_total %}
+        <p class="text-muted mb-3">
+            Fortschritt: {{ dia_progress }} von {{ dia_total }} Aufgaben im Bereich
+            „Digitaler Informationsaustausch“.
+        </p>
+    {% endif %}
+
+    <p class="mb-4">
+        Beantworte die folgenden Fragen zu Netzwerkkomponenten.
+    </p>
+
+    {% if feedback %}
+        <div class="alert alert-info">
+            {{ feedback }}
+        </div>
+    {% endif %}
+
+    <form method="post">
+        {% for f in fragen %}
+            <div class="card mb-3">
+                <div class="card-body">
+                    <p><strong>Frage {{ loop.index }}:</strong><br>
+                        {{ f.text }}
+                    </p>
+
+                    {% for opt in f.optionen %}
+                        <div class="form-check">
+                            <input
+                                class="form-check-input"
+                                type="radio"
+                                name="{{ f.id }}"
+                                id="{{ f.id }}_{{ loop.index }}_{{ loop.index0 }}"
+                                value="{{ opt }}"
+                                {% if auswahl and auswahl.get(f.id) == opt %}checked{% endif %}
+                                required
+                            >
+                            <label class="form-check-label" for="{{ f.id }}_{{ loop.index }}_{{ loop.index0 }}">
+                                {{ opt }}
+                            </label>
+                        </div>
+                    {% endfor %}
+
+                    {% if geloest %}
+                        <p class="mt-2">
+                            Richtige Lösung:
+                            <strong>{{ korrekt[f.id] }}</strong>
+                        </p>
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+
+        <button type="submit" class="btn btn-primary">
+            Antworten überprüfen
+        </button>
+
+        <a href="{{ url_for('dia_next', current='dia_a2') }}" class="btn btn-secondary ms-2">
+            Nächste Aufgabe
+        </a>
+    </form>
+</div>
+{% endblock %}

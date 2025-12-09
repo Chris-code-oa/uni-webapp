@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %}DIA A1 – Netzwerkkomponenten{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-1">DIA – Aufgabe A1</h1>
+
+    {% if dia_total %}
+        <p class="text-muted mb-3">
+            Fortschritt: {{ dia_progress }} von {{ dia_total }} Aufgaben im Bereich
+            „Digitaler Informationsaustausch“.
+        </p>
+    {% endif %}
+
+    <p class="mb-4">
+        Ordne jeder Beschreibung die richtige Netzwerkkomponente zu.
+    </p>
+
+    {% if feedback %}
+        <div class="alert alert-info">
+            {{ feedback }}
+        </div>
+    {% endif %}
+
+    <form method="post">
+        {% for b in beschreibungen %}
+            <div class="card mb-3">
+                <div class="card-body">
+
+                    <p><strong>Beschreibung {{ loop.index }}:</strong><br>
+                        {{ b.text }}
+                    </p>
+
+                    <select name="{{ b.id }}" class="form-select" required>
+                        <option value="">-- bitte wählen --</option>
+
+                        {% for opt in optionen %}
+                            {% if auswahl and auswahl.get(b.id) == opt %}
+                                <option value="{{ opt }}" selected>{{ opt }}</option>
+                            {% else %}
+                                <option value="{{ opt }}">{{ opt }}</option>
+                            {% endif %}
+                        {% endfor %}
+                    </select>
+
+                    {% if geloest %}
+                        <p class="mt-2">
+                            Richtige Lösung:
+                            <strong>{{ korrekt[b.id] }}</strong>
+                        </p>
+                    {% endif %}
+
+                </div>
+            </div>
+        {% endfor %}
+
+        <button type="submit" class="btn btn-primary">
+            Antworten überprüfen
+        </button>
+
+        <a href="{{ url_for('dia_next', current='dia_a1') }}" class="btn btn-secondary ms-2">
+            Nächste Aufgabe
+        </a>
+    </form>
+</div>
+{% endblock %}

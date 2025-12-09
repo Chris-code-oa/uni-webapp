@@ -1,14 +1,20 @@
 {% extends "base.html" %}
 
+{% block title %}Digitaler Informationsaustausch{% endblock %}
+
 {% block content %}
 <section class="card">
     <h2>Digitaler Informationsaustausch</h2>
-    <p>Hier sollen später Aufgaben zu Themen wie:</p>
+    <p>Hier lernst du Themen wie:</p>
     <ul class="steps">
-        <li>Datenübertragung & Netzwerke</li>
+        <li>Datenübertragung &amp; Netzwerke</li>
         <li>Internetdienste (E-Mail, Web, Cloud)</li>
         <li>Umgang mit Daten (Sicherheit, Datenschutz)</li>
     </ul>
-    <p>Aktuell ist dies eine Platzhalterseite, die nach und nach mit Übungsformaten gefüllt wird.</p>
+    <p>Wähle „Lernen starten“, um mit den Aufgaben zu beginnen.</p>
+
+    <a href="{{ url_for('dia_next') }}" class="btn btn-primary">
+        Lernen starten
+    </a>
 </section>
 {% endblock %}
