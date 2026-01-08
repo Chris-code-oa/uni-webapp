@@ -1,20 +1,41 @@
 {% extends "base.html" %}
 
-{% block title %}Digitaler Informationsaustausch{% endblock %}
-
 {% block content %}
+
 <section class="card">
     <h2>Digitaler Informationsaustausch</h2>
-    <p>Hier lernst du Themen wie:</p>
-    <ul class="steps">
-        <li>Datenübertragung &amp; Netzwerke</li>
-        <li>Internetdienste (E-Mail, Web, Cloud)</li>
-        <li>Umgang mit Daten (Sicherheit, Datenschutz)</li>
-    </ul>
-    <p>Wähle „Lernen starten“, um mit den Aufgaben zu beginnen.</p>
 
-    <a href="{{ url_for('dia_next') }}" class="btn btn-primary">
-        Lernen starten
-    </a>
+    <p class="text-muted">
+        In diesem Lernbereich übst du Grundlagen rund um Netzwerke und Internet.
+        Du lernst nicht nur Begriffe, sondern wendest sie in typischen Situationen an.
+    </p>
+
+    <h3>Das lernst du hier (DIA A1–A5):</h3>
+    <ul class="steps">
+        <li><strong>Netzwerkkomponenten verstehen</strong> (z. B. Router, Client, NAS, Server)</li>
+        <li><strong>Geräte richtig zuordnen</strong> (z. B. Switch, Access Point, Drucker)</li>
+        <li><strong>Aussagen prüfen</strong>: richtig oder falsch – mit Begründung</li>
+        <li><strong>Heimnetzwerke analysieren</strong>: IP-Fehler finden (doppelte IP, falsches Netz)</li>
+        <li><strong>Internetadressen prüfen</strong>: typische URL-Fehler erkennen und korrekt schreiben</li>
+    </ul>
+
+    <p class="text-muted">
+        Die Aufgaben erscheinen automatisch in unterschiedlicher Reihenfolge. Nach 5 Aufgaben siehst du deine Punkte
+        und kannst entscheiden, wie du weiterlernen möchtest.
+    </p>
 </section>
+
+<div class="card topic-row">
+    <div>
+        <h3>Bereit?</h3>
+        <p class="text-muted">
+            Starte jetzt – du bekommst direkt die erste Aufgabe.
+        </p>
+    </div>
+
+    <div class="topic-actions">
+        <a href="{{ url_for('dia_next') }}" class="btn">Lernen starten</a>
+    </div>
+</div>
+
 {% endblock %}

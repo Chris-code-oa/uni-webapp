@@ -1,4 +1,4 @@
-*/* --- Grundstil --- */
+/* --- Grundstil --- */
 * {
     margin: 0;
     padding: 0;
@@ -14,48 +14,386 @@ body {
     flex-direction: column;
 }
 
+/* --- Layout-Container (ohne Bootstrap) --- */
+.container {
+    width: min(1100px, 92%);
+    margin: 0 auto;
+}
+
+/* Hauptbereich */
+main.container {
+    flex: 1;
+    padding: 2rem 0 3rem;
+}
+
 /* --- Kopfbereich / Titel --- */
 .topbar {
     background: #1e293b;
-    padding: 1.2rem 2rem;
+    padding: 1.2rem 0;
     color: #f9fafb;
     box-shadow: 0 2px 8px rgba(0,0,0,0.2);
 }
 
-.topbar h1 {
+.topbar-brand {
     font-size: 1.8rem;
-    margin-bottom: 0.5rem;
+    margin: 0;
+    line-height: 1.2;
 }
+
+/* Flex-Helfer (weil wir kein Bootstrap mehr voraussetzen) */
+.d-flex { display: flex; }
+.justify-content-between { justify-content: space-between; }
+.align-items-center { align-items: center; }
+.gap-3 { gap: 1rem; }
 
 /* --- Navigation --- */
 .nav {
     display: flex;
-    gap: 1rem;
+    gap: 0.75rem;
     flex-wrap: wrap;
+    align-items: center;
 }
 
+.nav-link,
 .nav a {
     color: #e5e7eb;
     text-decoration: none;
     font-weight: 500;
-    padding: 0.3rem 0.8rem;
+    padding: 0.35rem 0.85rem;
     border-radius: 999px;
-    border: 1px solid rgba(228, 235, 247, 0.4);
-    font-size: 0.9rem;
+    border: 1px solid rgba(228, 235, 247, 0.35);
+    font-size: 0.92rem;
+    transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
 }
 
+.nav-link:hover,
 .nav a:hover {
     background: rgba(255,255,255,0.15);
+    border-color: rgba(228, 235, 247, 0.55);
+    transform: translateY(-1px);
 }
 
-/* --- Hauptbereich --- */
-.cont
+.nav-link.disabled {
+    opacity: 0.9;
+    border-style: dashed;
+    cursor: default;
+}
 
+.nav-link.disabled:hover {
+    background: transparent;
+    transform: none;
+}
+
+/* --- Karten / Panels --- */
 .card {
+    background: #ffffff;
+    border: 1px solid rgba(15, 23, 42, 0.08);
     border-radius: 1rem;
+    padding: 1.25rem 1.25rem;
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
+    margin-bottom: 1.2rem;
 }
 
-/* Überschrift-Abstände auf dem Dashboard etwas kompakter */
+.card h2 {
+    margin-bottom: 0.6rem;
+}
+
+/* Überschriften etwas kompakter */
 h2 {
     margin-bottom: 0.5rem;
+}
+
+/* --- Listen (z.B. steps) --- */
+.steps {
+    margin: 0.75rem 0 0.75rem 1.1rem;
+    color: #374151;
+}
+
+.steps li {
+    margin: 0.25rem 0;
+}
+
+/* --- Buttons (ohne Bootstrap) --- */
+.btn {
+    display: inline-block;
+    padding: 0.75rem 1rem;
+    border-radius: 0.9rem;
+    border: 1px solid transparent;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    transition: transform 0.15s ease, filter 0.15s ease, background 0.15s ease;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.03);
+}
+
+.btn-primary {
+    background: #2563eb;
+    color: #fff;
+}
+
+.btn-primary:hover {
+    background: #1d4ed8;
+}
+
+.btn-outline {
+    background: transparent;
+    border-color: rgba(37, 99, 235, 0.35);
+    color: #2563eb;
+}
+
+.btn-outline:hover {
+    background: rgba(37, 99, 235, 0.08);
+}
+
+/* Full-width button helper */
+.btn-block {
+    width: 100%;
+    text-align: center;
+}
+
+/* --- Formulare --- */
+form .form-row {
+    margin-bottom: 0.9rem;
+}
+
+label {
+    display: block;
+    margin-bottom: 0.35rem;
+    color: #374151;
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+input[type="text"],
+input[type="password"],
+input[type="email"],
+select,
+textarea {
+    width: 100%;
+    padding: 0.7rem 0.85rem;
+    border-radius: 0.85rem;
+    border: 1px solid rgba(15, 23, 42, 0.15);
+    background: #fff;
+    outline: none;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+    border-color: rgba(37, 99, 235, 0.55);
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+}
+
+/* --- Bilder in Aufgaben --- */
+img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 0.75rem;
+}
+
+/* --- Feedback / Hinweise --- */
+.alert {
+    padding: 0.85rem 1rem;
+    border-radius: 0.85rem;
+    border: 1px solid rgba(15, 23, 42, 0.12);
+    background: #f8fafc;
+    color: #0f172a;
+    margin: 0.9rem 0;
+}
+
+.alert-success {
+    border-color: rgba(34, 197, 94, 0.25);
+    background: rgba(34, 197, 94, 0.10);
+}
+
+.alert-error {
+    border-color: rgba(239, 68, 68, 0.25);
+    background: rgba(239, 68, 68, 0.10);
+}
+
+/* --- Kleine Helpers --- */
+.mt-2 { margin-top: 0.5rem; }
+.mt-3 { margin-top: 1rem; }
+.mb-0 { margin-bottom: 0; }
+.mb-2 { margin-bottom: 0.5rem; }
+.mb-3 { margin-bottom: 1rem; }
+.text-muted { color: #6b7280; }
+
+/* --- Responsive --- */
+@media (max-width: 700px) {
+    .topbar {
+        padding: 1rem 0;
+    }
+    .topbar-brand {
+        font-size: 1.4rem;
+    }
+    .nav {
+        gap: 0.5rem;
+    }
+    .nav-link, .nav a {
+        font-size: 0.9rem;
+        padding: 0.3rem 0.7rem;
+    }
+}
+/* ===== Modernes Menü-Layout ===== */
+:root{
+  --navy: #1e293b;
+  --blue: #2563eb;        /* moderner Blauton */
+  --blue-dark: #1d4ed8;
+  --line: rgba(228,235,247,0.35);
+}
+
+.topbar-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 1rem;
+}
+
+.brand{
+  color:#f9fafb;
+  text-decoration:none;
+  font-weight:800;
+  font-size:1.8rem;
+  letter-spacing:.2px;
+}
+
+.nav{
+  display:flex;
+  align-items:center;
+  gap:.75rem;
+  flex-wrap:wrap;
+}
+
+/* User ganz rechts */
+.user-pill{
+  margin-left: .5rem;
+  opacity: .95;
+}
+
+/* ===== Dropdown ===== */
+.nav-dropdown{
+  position: relative;
+  display: inline-flex;
+}
+
+.nav-dropdown-btn{
+  background: transparent;
+  cursor: pointer;
+}
+
+.nav-dropdown-menu{
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 0;
+  min-width: 260px;
+  display: none;
+  padding: 10px;
+  border-radius: 14px;
+  background: #0f172a;
+  border: 1px solid var(--line);
+  box-shadow: 0 16px 35px rgba(0,0,0,0.35);
+  z-index: 999;
+}
+
+.nav-dropdown-menu .nav-link{
+  display:block;
+  width:100%;
+  border-radius: 12px;
+  margin: 4px 0;
+  border: 1px solid rgba(228,235,247,0.18);
+}
+
+.nav-dropdown:hover .nav-dropdown-menu{
+  display:block;
+}
+
+/* ===== Buttons: ein Stil, ein Blauton ===== */
+.btn,
+.btn-primary{
+  background: var(--blue);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.0);
+  border-radius: 14px;
+  padding: 0.75rem 1rem;
+  font-weight: 700;
+  text-decoration: none;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  transition: transform .15s ease, filter .15s ease, background .15s ease;
+}
+
+.btn:hover,
+.btn-primary:hover{
+  background: var(--blue-dark);
+  transform: translateY(-1px);
+}
+
+/* Damit Buttons in Cards sauber in einer Reihe stehen */
+.card .btn,
+.card .btn-primary{
+  white-space: nowrap;
+}
+
+/* Wenn du auf der Startseite 3 Cards hast: Button rechts ausrichten */
+.topic-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 1rem;
+}
+
+.topic-actions{
+  display:flex;
+  justify-content:flex-end;
+}
+/* ===== Tabellen modern & clean ===== */
+.table-clean{
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.75rem;
+  font-size: 0.95rem;
+}
+
+.table-clean thead th{
+  text-align: left;
+  padding: 0.75rem 0.8rem;
+  background: rgba(30, 41, 59, 0.06);
+  border-bottom: 1px solid rgba(15, 23, 42, 0.10);
+  color: #0f172a;
+  font-weight: 800;
+}
+
+.table-clean tbody td{
+  padding: 0.75rem 0.8rem;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+  vertical-align: middle;
+}
+
+.table-clean tbody tr:hover{
+  background: rgba(37, 99, 235, 0.05);
+}
+
+/* Kleine Buttons im Dashboard */
+.btn-small{
+  padding: 0.55rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.9rem;
+}
+
+/* Outline Button (für Zurück) */
+.btn-outline{
+  background: transparent;
+  border: 1px solid rgba(37, 99, 235, 0.35);
+  color: #2563eb;
+}
+
+.btn-outline:hover{
+  background: rgba(37, 99, 235, 0.08);
 }

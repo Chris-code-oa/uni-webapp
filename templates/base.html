@@ -1,152 +1,62 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="de">
 <head>
-    <meta charset="utf-8">
-    <title>{{ title or "InformatikFit" }}</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{{ title if title else "InformatikFit" }}</title>
 
-    <!-- Bootstrap CSS -->
-    <link
-      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
-      rel="stylesheet"
-    >
-
-    <!-- Optionales eigenes CSS -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-
-    <!-- Custom Styles -->
-    <style>
-        :root {
-            --dark-blue: #1B2541;   /* Einheitliches Dunkelblau für alles */
-            --page-bg:   #f5f7fb;   /* Heller Hintergrund */
-        }
-
-/* Alle Primary-Buttons in deinem Dunkelblau */
-.btn-primary {
-    background-color: var(--dark-blue);
-    border-color: var(--dark-blue);
-}
-
-.btn-primary:hover,
-.btn-primary:focus {
-    background-color: #11182c; /* etwas dunkler für Hover */
-    border-color: #11182c;
-}
-
-        body {
-            margin: 0;
-            padding: 0;
-            background-color: var(--page-bg);
-        }
-
-        /* Header */
-        .topbar {
-            background: var(--dark-blue);
-            color: white;
-            padding: 0.9rem 0;
-            margin-bottom: 2rem;
-        }
-
-        .topbar-brand {
-            font-size: 1.8rem;
-            font-weight: 700;
-            margin: 0;
-        }
-
-        .topbar .nav-link {
-            color: white;
-            font-weight: 500;
-            margin-left: 0.75rem;
-        }
-
-        .topbar .nav-link:hover {
-            text-decoration: underline;
-        }
-
-        /* Banner (Dashboard-Kopf) */
-        .banner-box {
-            background: var(--dark-blue);
-            color: white;
-            border-radius: 1rem;
-            padding: 2rem;
-            margin-bottom: 2rem;
-        }
-
-        /* Karten ruhiges Design */
-        .card {
-            border-radius: 1rem;
-            box-shadow: 0 6px 16px rgba(0,0,0,0.06);
-        }
-
-        /* Footer */
-        .footer {
-            background: var(--dark-blue);
-            color: white;
-            text-align: center;
-            padding: 1rem 0;
-            margin-top: 3rem;
-            font-size: 0.9rem;
-        }
-    </style>
-
-    <!-- Bootstrap JS -->
-    <script
-      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js">
-    </script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 
 <body>
 
-    <!-- HEADER -->
-    <header class="topbar">
-        <div class="container d-flex justify-content-between align-items-center">
-            <h1 class="topbar-brand mb-0">InformatikFit</h1>
+<header class="topbar">
+  <div class="container topbar-row">
+    <a class="brand" href="{{ url_for('home') }}">InformatikFit</a>
 
-            <nav class="nav">
+    <nav class="nav">
+      {% if current_user.is_authenticated %}
 
-                <!-- Hauptseiten -->
-                <a class="nav-link" href="{{ url_for('home') }}">Start</a>
+        <a class="nav-link" href="{{ url_for('home') }}">Start</a>
 
-                <a class="nav-link" href="{{ url_for('digitaler_informationsaustausch') }}">
-                    Digitaler Informationsaustausch
-                </a>
+        <!-- Lernbereiche Dropdown -->
+        <div class="nav-dropdown">
+          <button class="nav-link nav-dropdown-btn" type="button">
+            Lernbereiche ▾
+          </button>
 
-                <a class="nav-link" href="{{ url_for('datenverarbeitung') }}">
-                    Datenverarbeitung
-                </a>
-
-                <a class="nav-link" href="{{ url_for('programmieren') }}">
-                    Programmieren
-                </a>
-
-                <!-- Benutzerbereich -->
-                {% if current_user.is_authenticated %}
-                    <a class="nav-link" href="{{ url_for('my_results') }}">Meine Ergebnisse</a>
-                    <a class="nav-link" href="{{ url_for('leaderboard') }}">Rangliste</a>
-
-                    <span class="nav-link disabled">
-                        👤 {{ current_user.username }} ({{ current_user.total_points }} P.)
-                    </span>
-
-                    <a class="nav-link" href="{{ url_for('logout') }}">Logout</a>
-                {% else %}
-                    <a class="nav-link" href="{{ url_for('login') }}">Login</a>
-                    <a class="nav-link" href="{{ url_for('register') }}">Registrieren</a>
-                {% endif %}
-
-            </nav>
+          <div class="nav-dropdown-menu">
+            <a class="nav-link" href="{{ url_for('digitaler_informationsaustausch') }}">
+              Digitaler Informationsaustausch
+            </a>
+            <a class="nav-link" href="{{ url_for('datenverarbeitung') }}">
+              Datenverarbeitung
+            </a>
+            <a class="nav-link" href="{{ url_for('programmieren') }}">
+              Programmieren
+            </a>
+          </div>
         </div>
-    </header>
 
-    <!-- INHALT -->
-    <main class="container mb-5">
-        {% block content %}{% endblock %}
-    </main>
+        <a class="nav-link" href="{{ url_for('leaderboard') }}">Rangliste</a>
+        <a class="nav-link" href="{{ url_for('logout') }}">Logout</a>
 
-    <!-- FOOTER -->
-    <footer class="footer">
-        © 2025 InformatikFit – Informatik Praxis
-    </footer>
+        <!-- User ganz rechts -->
+        <span class="nav-link user-pill">
+          👤 {{ current_user.username }} ({{ current_user.total_points }} P.)
+        </span>
+
+      {% else %}
+        <a class="nav-link" href="{{ url_for('login') }}">Login</a>
+        <a class="nav-link" href="{{ url_for('register') }}">Registrieren</a>
+      {% endif %}
+    </nav>
+  </div>
+</header>
+
+<main class="container">
+  {% block content %}{% endblock %}
+</main>
 
 </body>
 </html>

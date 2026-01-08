@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="card topic-row">
+  <div>
+    <h2>Schülerdetails: {{ student.username }}</h2>
+    <p class="text-muted">
+      Hier siehst du alle Versuche und Punkte dieses Schülers.
+    </p>
+  </div>
+
+  <div class="topic-actions">
+    <a class="btn btn-outline" href="{{ url_for('teacher_dashboard') }}">Zurück</a>
+  </div>
+</div>
+
+<section class="card">
+  <h3>Ergebnisse</h3>
+
+  {% if results and results|length > 0 %}
+    <div style="overflow-x:auto;">
+      <table class="table-clean">
+        <thead>
+          <tr>
+            <th>Zeitpunkt</th>
+            <th>Quiz</th>
+            <th>Punkte</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in results %}
+            <tr>
+              <td>{{ r.created_at.strftime("%d.%m.%Y %H:%M") }}</td>
+              <td><strong>{{ r.quiz_name }}</strong></td>
+              <td>{{ r.points }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <p class="text-muted">Noch keine Ergebnisse vorhanden.</p>
+  {% endif %}
+</section>
+
+{% endblock %}

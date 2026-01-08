@@ -1,27 +1,33 @@
+import os
 import random
-from flask import Flask, render_template, redirect, url_for, request, session
+from functools import wraps
+
+from flask import Flask, render_template, redirect, url_for, request, session, abort
 from flask_login import (
     LoginManager,
     login_user,
     logout_user,
     login_required,
-    current_user
+    current_user,
 )
+from sqlalchemy import func
+
 from models import db, User, Result
 
 app = Flask(__name__)
 
 # ---------------------------------------------------------
-# ⚙️ Konfiguration
+# ⚙️ Konfiguration (stabiler DB-Pfad)
 # ---------------------------------------------------------
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+INSTANCE_DIR = os.path.join(BASE_DIR, "instance")
+os.makedirs(INSTANCE_DIR, exist_ok=True)
+
 app.config["SECRET_KEY"] = "ändere-das-zu-etwas-geheimem"
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///app.db"
+app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + os.path.join(INSTANCE_DIR, "app.db")
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db.init_app(app)
-
-with app.app_context():
-    db.create_all()
 
 # ---------------------------------------------------------
 # 🔐 Login-System
@@ -37,32 +43,39 @@ def load_user(user_id):
 
 
 # ---------------------------------------------------------
-# ⭐ Hilfsfunktionen: Punkte + Fortschritt
+# 🧑‍🏫 Rollen-Schutz
+# ---------------------------------------------------------
+def teacher_required(func_):
+    @wraps(func_)
+    def wrapper(*args, **kwargs):
+        if not current_user.is_authenticated:
+            return login_manager.unauthorized()
+        if getattr(current_user, "role", "student") != "teacher":
+            abort(403)
+        return func_(*args, **kwargs)
+
+    return wrapper
+
+
+# ---------------------------------------------------------
+# ⭐ Hilfsfunktionen: Punkte + DIA-Fortschritt
 # ---------------------------------------------------------
 def add_points(quiz_name: str, points: int):
-    """Speichert Punkte für den aktuellen Benutzer."""
     if not current_user.is_authenticated:
         return
     if points <= 0:
         return
 
-    result = Result(
-        quiz_name=quiz_name,
-        points=points,
-        user_id=current_user.id
-    )
+    result = Result(quiz_name=quiz_name, points=points, user_id=current_user.id)
     db.session.add(result)
-
     current_user.total_points += points
     db.session.commit()
 
 
-# Alle vorhandenen Aufgaben im Bereich DIA
 DIA_TASK_VIEWS = ["dia_a1", "dia_a2", "dia_a3", "dia_a4", "dia_a5"]
 
 
 def get_dia_done():
-    """Session-Liste: welche DIA-Aufgaben wurden in dieser Runde schon bearbeitet?"""
     done = session.get("dia_done", [])
     done = [v for v in done if v in DIA_TASK_VIEWS]
     session["dia_done"] = done
@@ -70,7 +83,6 @@ def get_dia_done():
 
 
 def get_dia_scored():
-    """Session-Liste: welche DIA-Aufgaben haben in dieser Runde schon Punkte bekommen?"""
     scored = session.get("dia_scored", [])
     scored = [v for v in scored if v in DIA_TASK_VIEWS]
     session["dia_scored"] = scored
@@ -78,7 +90,6 @@ def get_dia_scored():
 
 
 def get_dia_progress_for_view(current_view: str):
-    """Gibt (Fortschritt_inkl_aktueller, Gesamtanzahl) zurück."""
     done = get_dia_done()
     count = len(done)
     if current_view in DIA_TASK_VIEWS and current_view not in done:
@@ -87,7 +98,22 @@ def get_dia_progress_for_view(current_view: str):
 
 
 # ---------------------------------------------------------
-# 🌐 Seiten (nur für eingeloggte Nutzer)
+# 🗄️ DB initialisieren + Lehrer anlegen
+# ---------------------------------------------------------
+with app.app_context():
+    db.create_all()
+
+    # Standard-Lehrer anlegen (falls noch nicht vorhanden)
+    teacher = User.query.filter_by(username="lehrer").first()
+    if not teacher:
+        teacher = User(username="lehrer", role="teacher")
+        teacher.set_password("lehrer123")
+        db.session.add(teacher)
+        db.session.commit()
+
+
+# ---------------------------------------------------------
+# 🌐 Seiten
 # ---------------------------------------------------------
 @app.route("/")
 @login_required
@@ -98,10 +124,7 @@ def home():
 @app.route("/digitaler-informationsaustausch")
 @login_required
 def digitaler_informationsaustausch():
-    return render_template(
-        "digitaler_informationsaustausch.html",
-        title="Digitaler Informationsaustausch"
-    )
+    return render_template("digitaler_informationsaustausch.html", title="Digitaler Informationsaustausch")
 
 
 @app.route("/datenverarbeitung")
@@ -116,17 +139,77 @@ def programmieren():
     return render_template("programmieren.html", title="Programmieren")
 
 
+@app.route("/dashboard")
+@login_required
+def dashboard():
+    return render_template("dashboard.html")
+
+
 # ---------------------------------------------------------
-# 🧩 Lernaufgaben – Digitaler Informationsaustausch (DIA)
+# 🧑‍🏫 Teacher: Dashboard + Detail
+# ---------------------------------------------------------
+@app.route("/teacher")
+@login_required
+@teacher_required
+def teacher_dashboard():
+    students = User.query.filter(User.role != "teacher").all()
+
+    stats = (
+        db.session.query(
+            Result.user_id.label("user_id"),
+            func.count(Result.id).label("attempts"),
+            func.max(Result.created_at).label("last_activity"),
+            func.sum(Result.points).label("sum_points"),
+        )
+        .group_by(Result.user_id)
+        .all()
+    )
+    stats_map = {s.user_id: s for s in stats}
+
+    dia_stats = (
+        db.session.query(
+            Result.user_id.label("user_id"),
+            func.sum(Result.points).label("dia_points"),
+        )
+        .filter(Result.quiz_name.like("DIA_%"))
+        .group_by(Result.user_id)
+        .all()
+    )
+    dia_map = {d.user_id: int(d.dia_points or 0) for d in dia_stats}
+
+    rows = []
+    for u in students:
+        st = stats_map.get(u.id)
+        rows.append(
+            {
+                "user": u,
+                "total_points": int(getattr(u, "total_points", 0) or 0),
+                "attempts": int(st.attempts) if st else 0,
+                "last_activity": st.last_activity if st else None,
+                "dia_points": int(dia_map.get(u.id, 0)),
+            }
+        )
+
+    rows.sort(key=lambda r: (r["last_activity"] is None, r["last_activity"]), reverse=True)
+    return render_template("teacher_dashboard.html", rows=rows)
+
+
+@app.route("/teacher/student/<int:user_id>")
+@login_required
+@teacher_required
+def teacher_student_detail(user_id):
+    student = User.query.get_or_404(user_id)
+    results = Result.query.filter_by(user_id=user_id).order_by(Result.created_at.desc()).all()
+    return render_template("teacher_student_detail.html", student=student, results=results)
+
+
+# ---------------------------------------------------------
+# 🧩 DIA: Next / Summary / Restart
 # ---------------------------------------------------------
 @app.route("/dia/next")
 @login_required
 def dia_next():
-    """
-    Gibt die nächste Aufgabe im Bereich DIA aus.
-    Jede Aufgabe kommt pro Runde nur einmal. Danach -> Summary.
-    """
-    current = request.args.get("current")  # z.B. "dia_a1"
+    current = request.args.get("current")
     done = get_dia_done()
 
     if current in DIA_TASK_VIEWS and current not in done:
@@ -134,15 +217,36 @@ def dia_next():
         session["dia_done"] = done
 
     remaining = [v for v in DIA_TASK_VIEWS if v not in done]
-
     if not remaining:
         return redirect(url_for("dia_summary"))
 
-    next_view = random.choice(remaining)
-    return redirect(url_for(next_view))
+    return redirect(url_for(random.choice(remaining)))
 
 
-# ---------------------- DIA A1 ---------------------------
+@app.route("/dia/summary")
+@login_required
+def dia_summary():
+    results = (
+        Result.query.filter_by(user_id=current_user.id)
+        .filter(Result.quiz_name.like("DIA_%"))
+        .all()
+    )
+    dia_points = sum(r.points for r in results)
+    total_tasks = len(DIA_TASK_VIEWS)
+    return render_template("dia_summary.html", dia_points=dia_points, total_tasks=total_tasks)
+
+
+@app.route("/dia/restart")
+@login_required
+def dia_restart():
+    session["dia_done"] = []
+    session["dia_scored"] = []
+    return redirect(url_for("dia_next"))
+
+
+# ---------------------------------------------------------
+# ✅ DIA A1
+# ---------------------------------------------------------
 @app.route("/dia/a1", methods=["GET", "POST"])
 @login_required
 def dia_a1():
@@ -152,16 +256,8 @@ def dia_a1():
         {"id": "b3", "text": "… ist ein zentraler Speicher für ein lokales Netzwerk."},
         {"id": "b4", "text": "… ist ein Rechner, der in einem Netzwerk bestimmte Aufgaben übernimmt."},
     ]
-
     optionen = ["Router", "Client", "NAS", "Server"]
-
-    korrekt = {
-        "b1": "Router",
-        "b2": "Client",
-        "b3": "NAS",
-        "b4": "Server",
-    }
-
+    korrekt = {"b1": "Router", "b2": "Client", "b3": "NAS", "b4": "Server"}
     erklaerung = {
         "b1": "Ein Router verbindet das interne Netzwerk mit dem Internet (Routing zwischen Netzen).",
         "b2": "Ein Client ist ein internetfähiges Endgerät, das Dienste nutzt (z. B. PC, Laptop).",
@@ -176,7 +272,6 @@ def dia_a1():
 
     if request.method == "POST":
         geloest = True
-
         for b in korrekt:
             auswahl[b] = request.form.get(b)
             if auswahl[b] == korrekt[b]:
@@ -206,40 +301,19 @@ def dia_a1():
     )
 
 
-# ---------------------- DIA A2 ---------------------------
+# ---------------------------------------------------------
+# ✅ DIA A2
+# ---------------------------------------------------------
 @app.route("/dia/a2", methods=["GET", "POST"])
 @login_required
 def dia_a2():
     fragen = [
-        {
-            "id": "q1",
-            "text": "Welches Gerät verteilt Datenpakete innerhalb eines lokalen Netzwerks (z. B. im Schulgebäude)?",
-            "optionen": ["Router", "Switch", "Beamer"],
-        },
-        {
-            "id": "q2",
-            "text": "Welches Gerät stellt typischerweise eine WLAN-Verbindung für Smartphones und Laptops bereit?",
-            "optionen": ["Access Point", "Drucker", "NAS"],
-        },
-        {
-            "id": "q3",
-            "text": "Welches Gerät ist hauptsächlich dafür da, Dokumente aus dem Netzwerk auf Papier auszugeben?",
-            "optionen": ["Beamer", "Drucker", "Server"],
-        },
-        {
-            "id": "q4",
-            "text": "Welches Gerät wird meistens genutzt, um Dienste wie Webseiten oder Datenbanken im Netzwerk bereitzustellen?",
-            "optionen": ["Client", "Server", "Smartphone"],
-        },
+        {"id": "q1", "text": "Welches Gerät verteilt Datenpakete innerhalb eines lokalen Netzwerks (z. B. im Schulgebäude)?", "optionen": ["Router", "Switch", "Beamer"]},
+        {"id": "q2", "text": "Welches Gerät stellt typischerweise eine WLAN-Verbindung für Smartphones und Laptops bereit?", "optionen": ["Access Point", "Drucker", "NAS"]},
+        {"id": "q3", "text": "Welches Gerät ist hauptsächlich dafür da, Dokumente aus dem Netzwerk auf Papier auszugeben?", "optionen": ["Beamer", "Drucker", "Server"]},
+        {"id": "q4", "text": "Welches Gerät wird meistens genutzt, um Dienste wie Webseiten oder Datenbanken im Netzwerk bereitzustellen?", "optionen": ["Client", "Server", "Smartphone"]},
     ]
-
-    korrekt = {
-        "q1": "Switch",
-        "q2": "Access Point",
-        "q3": "Drucker",
-        "q4": "Server",
-    }
-
+    korrekt = {"q1": "Switch", "q2": "Access Point", "q3": "Drucker", "q4": "Server"}
     erklaerung = {
         "q1": "Ein Switch verteilt Daten innerhalb eines LAN und verbindet Geräte miteinander.",
         "q2": "Ein Access Point stellt WLAN bereit, damit Geräte drahtlos ins Netzwerk kommen.",
@@ -254,9 +328,8 @@ def dia_a2():
 
     if request.method == "POST":
         geloest = True
-
-        for frage in fragen:
-            fid = frage["id"]
+        for f in fragen:
+            fid = f["id"]
             auswahl[fid] = request.form.get(fid)
             if auswahl[fid] == korrekt[fid]:
                 punkte += 1
@@ -284,7 +357,9 @@ def dia_a2():
     )
 
 
-# ---------------------- DIA A3 ---------------------------
+# ---------------------------------------------------------
+# ✅ DIA A3
+# ---------------------------------------------------------
 @app.route("/dia/a3", methods=["GET", "POST"])
 @login_required
 def dia_a3():
@@ -294,16 +369,8 @@ def dia_a3():
         {"id": "s3", "text": "Ein Access Point ermöglicht drahtlose Verbindungen für Geräte wie Smartphones und Laptops."},
         {"id": "s4", "text": "Ein NAS wird im Netzwerk hauptsächlich als zentraler Speicher verwendet."},
     ]
-
     optionen = ["Richtig", "Falsch"]
-
-    korrekt = {
-        "s1": "Richtig",
-        "s2": "Falsch",
-        "s3": "Richtig",
-        "s4": "Richtig",
-    }
-
+    korrekt = {"s1": "Richtig", "s2": "Falsch", "s3": "Richtig", "s4": "Richtig"}
     erklaerung = {
         "s1": "Ein Router verbindet unterschiedliche Netzwerke (z. B. Heimnetz ↔ Internet).",
         "s2": "Ein Switch verbindet Geräte im LAN; die Internetverbindung macht typischerweise der Router.",
@@ -318,7 +385,6 @@ def dia_a3():
 
     if request.method == "POST":
         geloest = True
-
         for a in aussagen:
             aid = a["id"]
             auswahl[aid] = request.form.get(aid)
@@ -349,7 +415,9 @@ def dia_a3():
     )
 
 
-# ---------------------- DIA A4 ---------------------------
+# ---------------------------------------------------------
+# ✅ DIA A4
+# ---------------------------------------------------------
 @app.route("/dia/a4", methods=["GET", "POST"])
 @login_required
 def dia_a4():
@@ -385,7 +453,6 @@ def dia_a4():
 
     if request.method == "POST":
         geloest = True
-
         for net in netzwerke:
             nid = net["id"]
             auswahl[nid] = request.form.get(nid)
@@ -416,7 +483,9 @@ def dia_a4():
     )
 
 
-# ---------------------- DIA A5 ---------------------------
+# ---------------------------------------------------------
+# ✅ DIA A5
+# ---------------------------------------------------------
 @app.route("/dia/a5", methods=["GET", "POST"])
 @login_required
 def dia_a5():
@@ -453,7 +522,6 @@ def dia_a5():
 
     if request.method == "POST":
         geloest = True
-
         for a in aufgaben:
             aid = a["id"]
             auswahl_fehler[aid] = request.form.get(aid + "_fehler")
@@ -490,38 +558,9 @@ def dia_a5():
     )
 
 
-# ---------------------- DIA SUMMARY + RESTART ---------------------------
-@app.route("/dia/summary")
-@login_required
-def dia_summary():
-    results = (
-        Result.query.filter_by(user_id=current_user.id)
-        .filter(Result.quiz_name.like("DIA_%"))
-        .all()
-    )
-    dia_points = sum(r.points for r in results)
-    total_tasks = len(DIA_TASK_VIEWS)
-
-    return render_template("dia_summary.html", dia_points=dia_points, total_tasks=total_tasks)
-
-
-@app.route("/dia/restart")
-@login_required
-def dia_restart():
-    session["dia_done"] = []
-    session["dia_scored"] = []
-    return redirect(url_for("dia_next"))
-
-
 # ---------------------------------------------------------
-# 🔥 Benutzerverwaltung
+# 🔥 Auth
 # ---------------------------------------------------------
-@app.route("/dashboard")
-@login_required
-def dashboard():
-    return render_template("dashboard.html")
-
-
 @app.route("/register", methods=["GET", "POST"])
 def register():
     if request.method == "POST":
@@ -531,9 +570,8 @@ def register():
         if User.query.filter_by(username=username).first():
             return "Benutzername existiert bereits."
 
-        user = User(username=username)
+        user = User(username=username, role="student")
         user.set_password(password)
-
         db.session.add(user)
         db.session.commit()
 
@@ -572,11 +610,7 @@ def logout():
 @app.route("/me/results")
 @login_required
 def my_results():
-    results = (
-        Result.query.filter_by(user_id=current_user.id)
-        .order_by(Result.created_at.desc())
-        .all()
-    )
+    results = Result.query.filter_by(user_id=current_user.id).order_by(Result.created_at.desc()).all()
     return render_template("my_results.html", results=results)
 
 
@@ -588,7 +622,7 @@ def leaderboard():
 
 
 # ---------------------------------------------------------
-# 🚀 Start der App
+# 🚀 Start
 # ---------------------------------------------------------
 if __name__ == "__main__":
     app.run(debug=True)

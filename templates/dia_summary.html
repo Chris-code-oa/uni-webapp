@@ -1,40 +1,68 @@
 {% extends "base.html" %}
 
-{% block title %}Digitaler Informationsaustausch – Zusammenfassung{% endblock %}
-
 {% block content %}
-<div class="container mt-4">
-    <h1 class="mb-3">Digitaler Informationsaustausch – Zusammenfassung</h1>
 
-    <p class="mb-3">
-        Du hast bisher im Bereich <strong>Digitaler Informationsaustausch</strong>
-        insgesamt <strong>{{ dia_points }} Punkte</strong> gesammelt.
+<section class="card">
+    <h2>Digitaler Informationsaustausch – Zusammenfassung</h2>
+
+    <p class="text-muted">
+        Du hast alle Aufgaben in diesem Lernbereich bearbeitet.
+        Hier siehst du dein Ergebnis.
     </p>
 
-    <p class="mb-4">
-        Was möchtest du als Nächstes lernen?
+    <ul class="steps">
+        <li><strong>Bearbeitete Aufgaben:</strong> {{ total_tasks }} von {{ total_tasks }}</li>
+        <li><strong>Erreichte Punkte:</strong> {{ dia_points }}</li>
+    </ul>
+
+    <p class="text-muted">
+        Du kannst den Lernbereich wiederholen oder mit einem neuen Themenbereich weitermachen.
     </p>
+</section>
 
-    <div class="d-flex flex-column flex-md-row gap-2">
-        <!-- Option 1: Bereich wiederholen -->
-        <a href="{{ url_for('dia_restart') }}" class="btn btn-primary">
-            🔁 Digitalen Informationsaustausch wiederholen
-        </a>
-
-        <!-- Option 2: Datenverarbeitung -->
-        <a href="{{ url_for('datenverarbeitung') }}" class="btn btn-outline-secondary">
-            📊 Datenverarbeitung
-        </a>
-
-        <!-- Option 3: Programmieren -->
-        <a href="{{ url_for('programmieren') }}" class="btn btn-outline-secondary">
-            💻 Programmieren
-        </a>
+<div class="card topic-row">
+    <div>
+        <h3>Wie möchtest du weitermachen?</h3>
+        <p class="text-muted">
+            Wiederhole die Aufgaben oder starte einen neuen Lernbereich.
+        </p>
     </div>
 
-    <p class="mt-4 text-muted">
-        Hinweis: Beim Wiederholen werden die Aufgaben erneut durchlaufen,
-        deine bisher gesammelten Punkte bleiben erhalten.
-    </p>
+    <div class="topic-actions">
+        <a href="{{ url_for('dia_restart') }}" class="btn">
+            DIA wiederholen
+        </a>
+    </div>
 </div>
+
+<div class="card topic-row">
+    <div>
+        <h3>Nächster Lernbereich: Datenverarbeitung</h3>
+        <p class="text-muted">
+            Lerne, wie Daten entstehen, verarbeitet und ausgewertet werden.
+        </p>
+    </div>
+
+    <div class="topic-actions">
+        <a href="{{ url_for('datenverarbeitung') }}" class="btn">
+            Zu Datenverarbeitung
+        </a>
+    </div>
+</div>
+
+<div class="card topic-row">
+    <div>
+        <h3>Nächster Lernbereich: Programmieren</h3>
+        <p class="text-muted">
+            Lerne Grundlagen der Programmierung und erstelle eigene Programme.
+        </p>
+    </div>
+
+    <div class="topic-actions">
+        <a href="{{ url_for('programmieren') }}" class="btn">
+            Zu Programmieren
+        </a>
+    </div>
+</div>
+
 {% endblock %}
