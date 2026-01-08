@@ -90,6 +90,12 @@ def get_dia_progress_for_view(current_view: str):
         count += 1
     return count, len(DIA_TASK_VIEWS)
 
+def get_dia_scored():
+    scored = session.get("dia_scored", [])
+    scored = [v for v in scored if v in DIA_TASK_VIEWS]
+    session["dia_scored"] = scored
+    return scored
+
 
 # ---------------------------------------------------------
 # 🌐 Seiten (nur für eingeloggte Nutzer)
@@ -197,7 +203,11 @@ def dia_a1():
         else:
             feedback = f"Du hast {punkte} von {len(korrekt)} richtig."
 
-        add_points("DIA_A1", punkte)
+        scored = get_dia_scored()
+        if "dia_a1" not in scored:
+            add_points("DIA_A1", punkte)
+            scored.append("dia_a1")
+            session["dia_scored"] = scored
 
     dia_progress, dia_total = get_dia_progress_for_view("dia_a1")
 
@@ -268,7 +278,11 @@ def dia_a2():
         else:
             feedback = f"Du hast {punkte} von {len(fragen)} richtig."
 
-        add_points("DIA_A2", punkte)
+        scored = get_dia_scored()
+        if "dia_a2" not in scored:
+            add_points("DIA_A2", punkte)
+            scored.append("dia_a2")
+            session["dia_scored"] = scored
 
     dia_progress, dia_total = get_dia_progress_for_view("dia_a2")
 
@@ -336,7 +350,11 @@ def dia_a3():
         else:
             feedback = f"Du hast {punkte} von {len(aussagen)} richtig."
 
-        add_points("DIA_A3", punkte)
+        scored = get_dia_scored()
+        if "dia_a3" not in scored:
+            add_points("DIA_A3", punkte)
+            scored.append("dia_a3")
+            session["dia_scored"] = scored
 
     dia_progress, dia_total = get_dia_progress_for_view("dia_a3")
 
@@ -408,7 +426,11 @@ def dia_a4():
         else:
             feedback = f"Du hast {punkte} von {len(netzwerke)} Netzwerken richtig erklärt."
 
-        add_points("DIA_A4", punkte)
+        scored = get_dia_scored()
+        if "dia_a4" not in scored:
+            add_points("DIA_A4", punkte)
+            scored.append("dia_a4")
+            session["dia_scored"] = scored
 
     dia_progress, dia_total = get_dia_progress_for_view("dia_a4")
 
@@ -487,7 +509,11 @@ def dia_a5():
         else:
             feedback = f"Du hast {punkte} von {len(aufgaben)} URLs vollständig richtig."
 
-        add_points("DIA_A5", punkte)
+        scored = get_dia_scored()
+        if "dia_a5" not in scored:
+            add_points("DIA_A5", punkte)
+            scored.append("dia_a5")
+            session["dia_scored"] = scored
 
     dia_progress, dia_total = get_dia_progress_for_view("dia_a5")
 
@@ -533,6 +559,7 @@ def dia_restart():
     Setzt den DIA-Fortschritt zurück und startet den Bereich neu.
     """
     session["dia_done"] = []
+    session["dia_scored"] = []   # <-- neu: Bewertungspuffer zurücksetzen
     return redirect(url_for("dia_next"))
 
 # ---------------------------------------------------------
