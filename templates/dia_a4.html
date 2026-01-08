@@ -53,11 +53,22 @@
                     </select>
 
                     {% if geloest %}
-                        <p class="mt-2">
-                            Richtige Erklärung:
-                            <strong>{{ korrekt[net.id] }}</strong>
-                        </p>
-                    {% endif %}
+  <p class="mt-2">
+    Richtige Erklärung: <strong>{{ korrekt[net.id] }}</strong>
+  </p>
+
+  {% if auswahl.get(net.id) == korrekt[net.id] %}
+    <div class="alert alert-success py-2">
+      ✅ Gut gemacht, weil: {{ erklaerung[net.id] }}
+    </div>
+  {% else %}
+    <div class="alert alert-warning py-2">
+      ❌ Leider nicht richtig. Richtiger wäre: <strong>{{ korrekt[net.id] }}</strong><br>
+      Grund: {{ erklaerung[net.id] }}
+    </div>
+  {% endif %}
+{% endif %}
+
                 </div>
             </div>
         {% endfor %}

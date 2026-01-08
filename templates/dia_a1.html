@@ -45,11 +45,20 @@
                     </select>
 
                     {% if geloest %}
-                        <p class="mt-2">
-                            Richtige Lösung:
-                            <strong>{{ korrekt[b.id] }}</strong>
-                        </p>
-                    {% endif %}
+                    <p class="mt-2">
+                        Richtige Lösung: <strong>{{ korrekt[b.id] }}</strong>
+                    </p>
+                    
+                    {% if auswahl.get(b.id) == korrekt[b.id] %}
+                     <div class="alert alert-success py-2">
+                        ✅ Gut gemacht, weil: {{ erklaerung[b.id] }}
+                    </div>
+                     {% else %}
+                     <div class="alert alert-warning py-2">
+                        ❌ Leider nicht richtig. Richtiger wäre <strong>{{ korrekt[b.id] }}</strong>, da: {{ erklaerung[b.id] }}
+                    </div>
+                    {% endif %
+                        {% enif %}
 
                 </div>
             </div>

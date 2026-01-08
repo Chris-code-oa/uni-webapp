@@ -51,11 +51,31 @@
                            value="{% if auswahl_korrekt %}{{ auswahl_korrekt.get(a.id) }}{% endif %}">
 
                     {% if geloest %}
-                        <p class="mt-2">
-                            Richtige Lösung:
-                            <strong>{{ a.korrekt }}</strong>
-                        </p>
-                    {% endif %}
+  {% set fehler_ok = (auswahl_fehler.get(a.id) == korrekt_fehler[a.id]) %}
+  {% set url_ok = (auswahl_korrekt.get(a.id)|trim == a.korrekt) %}
+
+  <p class="mt-2">
+    Richtige Lösung: <strong>{{ a.korrekt }}</strong>
+  </p>
+
+  {% if fehler_ok and url_ok %}
+    <div class="alert alert-success py-2">
+      ✅ Sehr gut! Du hast Fehler und korrekte URL richtig erkannt.<br>
+      Begründung: {{ erklaerung[a.id] }}
+    </div>
+  {% else %}
+    <div class="alert alert-warning py-2">
+      ❌ Nicht ganz richtig.<br>
+      {% if not fehler_ok %}
+        Fehlerart: richtig wäre <strong>{{ korrekt_fehler[a.id] }}</strong>.<br>
+      {% endif %}
+      {% if not url_ok %}
+        URL: richtig wäre <strong>{{ a.korrekt }}</strong>.<br>
+      {% endif %}
+      Begründung: {{ erklaerung[a.id] }}
+    </div>
+  {% endif %}
+{% endif %}
                 </div>
             </div>
         {% endfor %}

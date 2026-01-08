@@ -49,11 +49,20 @@
                     {% endfor %}
 
                     {% if geloest %}
-                        <p class="mt-2">
-                            Richtige Lösung:
-                            <strong>{{ korrekt[f.id] }}</strong>
-                        </p>
-                    {% endif %}
+  <p class="mt-2">
+    Richtige Lösung: <strong>{{ korrekt[f.id] }}</strong>
+  </p>
+
+  {% if auswahl.get(f.id) == korrekt[f.id] %}
+    <div class="alert alert-success py-2">
+      ✅ Gut gemacht, weil: {{ erklaerung[f.id] }}
+    </div>
+  {% else %}
+    <div class="alert alert-warning py-2">
+      ❌ Leider nicht richtig. Richtiger wäre <strong>{{ korrekt[f.id] }}</strong>, da: {{ erklaerung[f.id] }}
+    </div>
+  {% endif %}
+{% endif %}
                 </div>
             </div>
         {% endfor %}

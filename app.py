@@ -14,9 +14,9 @@ app = Flask(__name__)
 # ---------------------------------------------------------
 # ⚙️ Konfiguration
 # ---------------------------------------------------------
-app.config['SECRET_KEY'] = 'ändere-das-zu-etwas-geheimem'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config["SECRET_KEY"] = "ändere-das-zu-etwas-geheimem"
+app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///app.db"
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db.init_app(app)
 
@@ -39,12 +39,8 @@ def load_user(user_id):
 # ---------------------------------------------------------
 # ⭐ Hilfsfunktionen: Punkte + Fortschritt
 # ---------------------------------------------------------
-
 def add_points(quiz_name: str, points: int):
-    """
-    Speichert Punkte für den aktuellen Benutzer.
-    Wird z.B. aus den DIA-Aufgaben aufgerufen.
-    """
+    """Speichert Punkte für den aktuellen Benutzer."""
     if not current_user.is_authenticated:
         return
     if points <= 0:
@@ -57,9 +53,7 @@ def add_points(quiz_name: str, points: int):
     )
     db.session.add(result)
 
-    # Aufsummieren in total_points
     current_user.total_points += points
-
     db.session.commit()
 
 
@@ -68,39 +62,33 @@ DIA_TASK_VIEWS = ["dia_a1", "dia_a2", "dia_a3", "dia_a4", "dia_a5"]
 
 
 def get_dia_done():
-    """
-    Liest den DIA-Fortschritt aus der Session und säubert ihn.
-    Gibt eine Liste der bereits erledigten View-Namen zurück.
-    """
+    """Session-Liste: welche DIA-Aufgaben wurden in dieser Runde schon bearbeitet?"""
     done = session.get("dia_done", [])
-    # Nur gültige Aufgaben behalten
     done = [v for v in done if v in DIA_TASK_VIEWS]
     session["dia_done"] = done
     return done
 
 
-def get_dia_progress_for_view(current_view: str):
-    """
-    Gibt (Fortschritt_inkl_aktueller, Gesamtanzahl) zurück.
-    Die aktuelle Aufgabe wird mitgezählt, auch wenn sie noch nicht in 'done' steht.
-    """
-    done = get_dia_done()
-    count = len(done)
-    if current_view in DIA_TASK_VIEWS and current_view not in done:
-        count += 1
-    return count, len(DIA_TASK_VIEWS)
-
 def get_dia_scored():
+    """Session-Liste: welche DIA-Aufgaben haben in dieser Runde schon Punkte bekommen?"""
     scored = session.get("dia_scored", [])
     scored = [v for v in scored if v in DIA_TASK_VIEWS]
     session["dia_scored"] = scored
     return scored
 
 
+def get_dia_progress_for_view(current_view: str):
+    """Gibt (Fortschritt_inkl_aktueller, Gesamtanzahl) zurück."""
+    done = get_dia_done()
+    count = len(done)
+    if current_view in DIA_TASK_VIEWS and current_view not in done:
+        count += 1
+    return count, len(DIA_TASK_VIEWS)
+
+
 # ---------------------------------------------------------
 # 🌐 Seiten (nur für eingeloggte Nutzer)
 # ---------------------------------------------------------
-
 @app.route("/")
 @login_required
 def home():
@@ -119,53 +107,42 @@ def digitaler_informationsaustausch():
 @app.route("/datenverarbeitung")
 @login_required
 def datenverarbeitung():
-    return render_template(
-        "datenverarbeitung.html",
-        title="Datenverarbeitung"
-    )
+    return render_template("datenverarbeitung.html", title="Datenverarbeitung")
 
 
 @app.route("/programmieren")
 @login_required
 def programmieren():
-    return render_template(
-        "programmieren.html",
-        title="Programmieren"
-    )
+    return render_template("programmieren.html", title="Programmieren")
 
 
 # ---------------------------------------------------------
 # 🧩 Lernaufgaben – Digitaler Informationsaustausch (DIA)
 # ---------------------------------------------------------
-
 @app.route("/dia/next")
 @login_required
 def dia_next():
     """
-    Gibt die nächste Aufgabe aus dem Bereich Digitaler Informationsaustausch aus.
-    Wenn alle Aufgaben einmal erledigt wurden, geht es zur Zusammenfassung.
+    Gibt die nächste Aufgabe im Bereich DIA aus.
+    Jede Aufgabe kommt pro Runde nur einmal. Danach -> Summary.
     """
-
-    current = request.args.get("current")  # z.B. "dia_a1" oder None
+    current = request.args.get("current")  # z.B. "dia_a1"
     done = get_dia_done()
 
-    # aktuelle Aufgabe als erledigt markieren
     if current in DIA_TASK_VIEWS and current not in done:
         done.append(current)
         session["dia_done"] = done
 
-    # verbleibende Aufgaben
     remaining = [v for v in DIA_TASK_VIEWS if v not in done]
 
-    # wenn nichts mehr übrig ist → alle wurden einmal gemacht
     if not remaining:
         return redirect(url_for("dia_summary"))
 
     next_view = random.choice(remaining)
     return redirect(url_for(next_view))
 
-# ---------------------- DIA A1 ---------------------------
 
+# ---------------------- DIA A1 ---------------------------
 @app.route("/dia/a1", methods=["GET", "POST"])
 @login_required
 def dia_a1():
@@ -182,7 +159,14 @@ def dia_a1():
         "b1": "Router",
         "b2": "Client",
         "b3": "NAS",
-        "b4": "Server"
+        "b4": "Server",
+    }
+
+    erklaerung = {
+        "b1": "Ein Router verbindet das interne Netzwerk mit dem Internet (Routing zwischen Netzen).",
+        "b2": "Ein Client ist ein internetfähiges Endgerät, das Dienste nutzt (z. B. PC, Laptop).",
+        "b3": "Ein NAS ist ein zentraler Netzwerkspeicher, auf den mehrere Geräte zugreifen können.",
+        "b4": "Ein Server stellt im Netzwerk Dienste bereit (z. B. Dateien, Webseiten, Druckdienste).",
     }
 
     feedback = None
@@ -198,10 +182,7 @@ def dia_a1():
             if auswahl[b] == korrekt[b]:
                 punkte += 1
 
-        if punkte == len(korrekt):
-            feedback = "Super! Alles richtig 🎉"
-        else:
-            feedback = f"Du hast {punkte} von {len(korrekt)} richtig."
+        feedback = "Super! Alles richtig 🎉" if punkte == len(korrekt) else f"Du hast {punkte} von {len(korrekt)} richtig."
 
         scored = get_dia_scored()
         if "dia_a1" not in scored:
@@ -216,6 +197,7 @@ def dia_a1():
         beschreibungen=beschreibungen,
         optionen=optionen,
         korrekt=korrekt,
+        erklaerung=erklaerung,
         feedback=feedback,
         auswahl=auswahl,
         geloest=geloest,
@@ -225,7 +207,6 @@ def dia_a1():
 
 
 # ---------------------- DIA A2 ---------------------------
-
 @app.route("/dia/a2", methods=["GET", "POST"])
 @login_required
 def dia_a2():
@@ -233,22 +214,22 @@ def dia_a2():
         {
             "id": "q1",
             "text": "Welches Gerät verteilt Datenpakete innerhalb eines lokalen Netzwerks (z. B. im Schulgebäude)?",
-            "optionen": ["Router", "Switch", "Beamer"]
+            "optionen": ["Router", "Switch", "Beamer"],
         },
         {
             "id": "q2",
             "text": "Welches Gerät stellt typischerweise eine WLAN-Verbindung für Smartphones und Laptops bereit?",
-            "optionen": ["Access Point", "Drucker", "NAS"]
+            "optionen": ["Access Point", "Drucker", "NAS"],
         },
         {
             "id": "q3",
             "text": "Welches Gerät ist hauptsächlich dafür da, Dokumente aus dem Netzwerk auf Papier auszugeben?",
-            "optionen": ["Beamer", "Drucker", "Server"]
+            "optionen": ["Beamer", "Drucker", "Server"],
         },
         {
             "id": "q4",
             "text": "Welches Gerät wird meistens genutzt, um Dienste wie Webseiten oder Datenbanken im Netzwerk bereitzustellen?",
-            "optionen": ["Client", "Server", "Smartphone"]
+            "optionen": ["Client", "Server", "Smartphone"],
         },
     ]
 
@@ -256,7 +237,14 @@ def dia_a2():
         "q1": "Switch",
         "q2": "Access Point",
         "q3": "Drucker",
-        "q4": "Server"
+        "q4": "Server",
+    }
+
+    erklaerung = {
+        "q1": "Ein Switch verteilt Daten innerhalb eines LAN und verbindet Geräte miteinander.",
+        "q2": "Ein Access Point stellt WLAN bereit, damit Geräte drahtlos ins Netzwerk kommen.",
+        "q3": "Ein Drucker gibt Dokumente aus dem Netzwerk auf Papier aus.",
+        "q4": "Ein Server stellt Dienste im Netzwerk bereit (Web, Datenbanken, Dateien).",
     }
 
     feedback = None
@@ -273,10 +261,7 @@ def dia_a2():
             if auswahl[fid] == korrekt[fid]:
                 punkte += 1
 
-        if punkte == len(fragen):
-            feedback = "Super! Alles richtig in DIA A2 🎉"
-        else:
-            feedback = f"Du hast {punkte} von {len(fragen)} richtig."
+        feedback = "Super! Alles richtig in DIA A2 🎉" if punkte == len(fragen) else f"Du hast {punkte} von {len(fragen)} richtig."
 
         scored = get_dia_scored()
         if "dia_a2" not in scored:
@@ -290,6 +275,7 @@ def dia_a2():
         "dia_a2.html",
         fragen=fragen,
         korrekt=korrekt,
+        erklaerung=erklaerung,
         auswahl=auswahl,
         feedback=feedback,
         geloest=geloest,
@@ -299,27 +285,14 @@ def dia_a2():
 
 
 # ---------------------- DIA A3 ---------------------------
-
 @app.route("/dia/a3", methods=["GET", "POST"])
 @login_required
 def dia_a3():
     aussagen = [
-        {
-            "id": "s1",
-            "text": "Ein Router verbindet unterschiedliche Netzwerke miteinander (z. B. Heimnetz und Internet)."
-        },
-        {
-            "id": "s2",
-            "text": "Ein Switch stellt in der Regel die Verbindung eines Netzwerks ins Internet her."
-        },
-        {
-            "id": "s3",
-            "text": "Ein Access Point ermöglicht drahtlose Verbindungen für Geräte wie Smartphones und Laptops."
-        },
-        {
-            "id": "s4",
-            "text": "Ein NAS wird im Netzwerk hauptsächlich als zentraler Speicher verwendet."
-        },
+        {"id": "s1", "text": "Ein Router verbindet unterschiedliche Netzwerke miteinander (z. B. Heimnetz und Internet)."},
+        {"id": "s2", "text": "Ein Switch stellt in der Regel die Verbindung eines Netzwerks ins Internet her."},
+        {"id": "s3", "text": "Ein Access Point ermöglicht drahtlose Verbindungen für Geräte wie Smartphones und Laptops."},
+        {"id": "s4", "text": "Ein NAS wird im Netzwerk hauptsächlich als zentraler Speicher verwendet."},
     ]
 
     optionen = ["Richtig", "Falsch"]
@@ -328,7 +301,14 @@ def dia_a3():
         "s1": "Richtig",
         "s2": "Falsch",
         "s3": "Richtig",
-        "s4": "Richtig"
+        "s4": "Richtig",
+    }
+
+    erklaerung = {
+        "s1": "Ein Router verbindet unterschiedliche Netzwerke (z. B. Heimnetz ↔ Internet).",
+        "s2": "Ein Switch verbindet Geräte im LAN; die Internetverbindung macht typischerweise der Router.",
+        "s3": "Ein Access Point stellt WLAN bereit, damit Geräte drahtlos ins Netzwerk kommen.",
+        "s4": "Ein NAS ist ein zentraler Speicher im Netzwerk (Network Attached Storage).",
     }
 
     feedback = None
@@ -345,10 +325,7 @@ def dia_a3():
             if auswahl[aid] == korrekt[aid]:
                 punkte += 1
 
-        if punkte == len(aussagen):
-            feedback = "Stark! Alle Aussagen in DIA A3 richtig eingeschätzt 🎉"
-        else:
-            feedback = f"Du hast {punkte} von {len(aussagen)} richtig."
+        feedback = "Stark! Alle Aussagen in DIA A3 richtig eingeschätzt 🎉" if punkte == len(aussagen) else f"Du hast {punkte} von {len(aussagen)} richtig."
 
         scored = get_dia_scored()
         if "dia_a3" not in scored:
@@ -363,6 +340,7 @@ def dia_a3():
         aussagen=aussagen,
         optionen=optionen,
         korrekt=korrekt,
+        erklaerung=erklaerung,
         auswahl=auswahl,
         feedback=feedback,
         geloest=geloest,
@@ -372,26 +350,13 @@ def dia_a3():
 
 
 # ---------------------- DIA A4 ---------------------------
-
 @app.route("/dia/a4", methods=["GET", "POST"])
 @login_required
 def dia_a4():
     netzwerke = [
-        {
-            "id": "n1",
-            "name": "Netzwerk 1",
-            "image": "dia_a4_net1.png",
-        },
-        {
-            "id": "n2",
-            "name": "Netzwerk 2",
-            "image": "dia_a4_net2.png",
-        },
-        {
-            "id": "n3",
-            "name": "Netzwerk 3",
-            "image": "dia_a4_net3.png",
-        },
+        {"id": "n1", "name": "Netzwerk 1", "image": "dia_a4_net1.png"},
+        {"id": "n2", "name": "Netzwerk 2", "image": "dia_a4_net2.png"},
+        {"id": "n3", "name": "Netzwerk 3", "image": "dia_a4_net3.png"},
     ]
 
     optionen = [
@@ -405,6 +370,12 @@ def dia_a4():
         "n1": "Eine IP-Adresse gehört zu einem anderen Netz (z.B. 192.186 statt 192.168).",
         "n2": "Eine IP-Adresse kommt doppelt vor.",
         "n3": "Dieses Netzwerk kann so funktionieren (alle IP-Adressen sind eindeutig und im selben Netz).",
+    }
+
+    erklaerung = {
+        "n1": "Hier ist eine IP im falschen Netz (192.186 statt 192.168). Geräte können so nicht korrekt kommunizieren.",
+        "n2": "Hier gibt es eine doppelte IP-Adresse. IPs müssen im selben Netz eindeutig sein.",
+        "n3": "Alle Geräte haben eindeutige IPs im selben Netz (z. B. 192.168.0.x). So kann das Heimnetz funktionieren.",
     }
 
     feedback = None
@@ -421,10 +392,7 @@ def dia_a4():
             if auswahl[nid] == korrekt[nid]:
                 punkte += 1
 
-        if punkte == len(netzwerke):
-            feedback = "Sehr gut! Du hast alle Heimnetzwerke richtig beurteilt 🎉"
-        else:
-            feedback = f"Du hast {punkte} von {len(netzwerke)} Netzwerken richtig erklärt."
+        feedback = "Sehr gut! Du hast alle Heimnetzwerke richtig beurteilt 🎉" if punkte == len(netzwerke) else f"Du hast {punkte} von {len(netzwerke)} Netzwerken richtig erklärt."
 
         scored = get_dia_scored()
         if "dia_a4" not in scored:
@@ -439,6 +407,7 @@ def dia_a4():
         netzwerke=netzwerke,
         optionen=optionen,
         korrekt=korrekt,
+        erklaerung=erklaerung,
         auswahl=auswahl,
         feedback=feedback,
         geloest=geloest,
@@ -448,26 +417,13 @@ def dia_a4():
 
 
 # ---------------------- DIA A5 ---------------------------
-
 @app.route("/dia/a5", methods=["GET", "POST"])
 @login_required
 def dia_a5():
     aufgaben = [
-        {
-            "id": "u1",
-            "fehler_url": "https://www.bycsde",
-            "korrekt": "https://www.bycs.de"
-        },
-        {
-            "id": "u2",
-            "fehler_url": "https:/ www.bycs.de",
-            "korrekt": "https://www.bycs.de"
-        },
-        {
-            "id": "u3",
-            "fehler_url": "https://ww.bycs.de",
-            "korrekt": "https://www.bycs.de"
-        },
+        {"id": "u1", "fehler_url": "https://www.bycsde", "korrekt": "https://www.bycs.de"},
+        {"id": "u2", "fehler_url": "https:/ www.bycs.de", "korrekt": "https://www.bycs.de"},
+        {"id": "u3", "fehler_url": "https://ww.bycs.de", "korrekt": "https://www.bycs.de"},
     ]
 
     optionen = [
@@ -483,6 +439,12 @@ def dia_a5():
         "u3": "www ist falsch geschrieben",
     }
 
+    erklaerung = {
+        "u1": "Bei Domains ist die Endung wichtig. Korrekt ist bycs.de (mit Punkt und Endung).",
+        "u2": "Bei https:// müssen zwei Slashes stehen und es dürfen keine Leerzeichen in der URL sein.",
+        "u3": "Die Subdomain 'www' ist falsch geschrieben (ww statt www).",
+    }
+
     feedback = None
     geloest = False
     auswahl_fehler = {}
@@ -494,20 +456,16 @@ def dia_a5():
 
         for a in aufgaben:
             aid = a["id"]
-
             auswahl_fehler[aid] = request.form.get(aid + "_fehler")
             auswahl_korrekt[aid] = request.form.get(aid + "_korrekt")
 
             richtig_fehler = auswahl_fehler[aid] == korrekt_fehler[aid]
-            richtig_url = auswahl_korrekt[aid].strip() == a["korrekt"]
+            richtig_url = (auswahl_korrekt[aid] or "").strip() == a["korrekt"]
 
             if richtig_fehler and richtig_url:
                 punkte += 1
 
-        if punkte == len(aufgaben):
-            feedback = "Super! Alle URLs wurden richtig korrigiert 🎉"
-        else:
-            feedback = f"Du hast {punkte} von {len(aufgaben)} URLs vollständig richtig."
+        feedback = "Super! Alle URLs wurden richtig korrigiert 🎉" if punkte == len(aufgaben) else f"Du hast {punkte} von {len(aufgaben)} URLs vollständig richtig."
 
         scored = get_dia_scored()
         if "dia_a5" not in scored:
@@ -522,6 +480,7 @@ def dia_a5():
         aufgaben=aufgaben,
         optionen=optionen,
         korrekt_fehler=korrekt_fehler,
+        erklaerung=erklaerung,
         geloest=geloest,
         auswahl_fehler=auswahl_fehler,
         auswahl_korrekt=auswahl_korrekt,
@@ -529,43 +488,34 @@ def dia_a5():
         dia_progress=dia_progress,
         dia_total=dia_total,
     )
+
+
+# ---------------------- DIA SUMMARY + RESTART ---------------------------
 @app.route("/dia/summary")
 @login_required
 def dia_summary():
-    """
-    Zeigt den Punktestand im Bereich Digitaler Informationsaustausch
-    und bietet Optionen für das weitere Lernen.
-    """
-    # alle Result-Einträge des Users, die mit "DIA_" beginnen
-    results = Result.query.filter_by(user_id=current_user.id) \
-                          .filter(Result.quiz_name.like("DIA_%")) \
-                          .all()
+    results = (
+        Result.query.filter_by(user_id=current_user.id)
+        .filter(Result.quiz_name.like("DIA_%"))
+        .all()
+    )
     dia_points = sum(r.points for r in results)
-
-    # wie viele Aufgaben insgesamt gibt es?
     total_tasks = len(DIA_TASK_VIEWS)
 
-    return render_template(
-        "dia_summary.html",
-        dia_points=dia_points,
-        total_tasks=total_tasks
-    )
+    return render_template("dia_summary.html", dia_points=dia_points, total_tasks=total_tasks)
 
 
 @app.route("/dia/restart")
 @login_required
 def dia_restart():
-    """
-    Setzt den DIA-Fortschritt zurück und startet den Bereich neu.
-    """
     session["dia_done"] = []
-    session["dia_scored"] = []   # <-- neu: Bewertungspuffer zurücksetzen
+    session["dia_scored"] = []
     return redirect(url_for("dia_next"))
+
 
 # ---------------------------------------------------------
 # 🔥 Benutzerverwaltung
 # ---------------------------------------------------------
-
 @app.route("/dashboard")
 @login_required
 def dashboard():
@@ -617,36 +567,16 @@ def logout():
 
 
 # ---------------------------------------------------------
-# 🔥 Punkte speichern + Ergebnisse-Ansicht
+# 🔥 Ergebnisse & Rangliste
 # ---------------------------------------------------------
-
-@app.route("/quiz/<quiz_name>/finish", methods=["POST"])
-@login_required
-def finish_quiz(quiz_name):
-    points = int(request.form.get("points", 0))
-
-    result = Result(
-        quiz_name=quiz_name,
-        points=points,
-        user_id=current_user.id
-    )
-    db.session.add(result)
-
-    current_user.total_points += points
-
-    db.session.commit()
-
-    return redirect(url_for("my_results"))
-
-
 @app.route("/me/results")
 @login_required
 def my_results():
-    results = Result.query \
-        .filter_by(user_id=current_user.id) \
-        .order_by(Result.created_at.desc()) \
+    results = (
+        Result.query.filter_by(user_id=current_user.id)
+        .order_by(Result.created_at.desc())
         .all()
-
+    )
     return render_template("my_results.html", results=results)
 
 
