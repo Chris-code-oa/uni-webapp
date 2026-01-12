@@ -1,22 +1,19 @@
 {% extends "base.html" %}
 
-{% block title %}Programmieren – InformatikFit{% endblock %}
-
 {% block content %}
-<section class="card p-4">
-    <h2>Programmieren</h2>
-    <p>Hier sollst du später Programmier-Konzepte üben:</p>
-    <ul class="steps">
-        <li>Ablaufdiagramme und Algorithmen</li>
-        <li>Schleifen und Bedingungen</li>
-        <li>kleine Programmieraufgaben (z.&nbsp;B. in Python)</li>
-    </ul>
-    <p>Diese Seite dient aktuell als Platzhalter für das Prüfungsformat „Programmieren“.</p>
+<section class="card">
+  <h2>Programmieren</h2>
 
-    <!-- Test-Button für Punkte -->
-    <form action="/quiz/programmieren/finish" method="post">
-        <input type="hidden" name="points" value="10">
-        <button class="btn btn-success mt-3">10 Punkte bekommen 🎯</button>
-    </form>
+  <p>Hier sollst du später Programmier-Konzepte üben:</p>
+
+  <ul class="steps">
+    <li>Ablaufdiagramme und Algorithmen</li>
+    <li>Schleifen und Bedingungen</li>
+    <li>kleine Programmieraufgaben (z. B. in Python)</li>
+  </ul>
+
+  <p class="text-muted">
+    Diese Seite ist aktuell eine Übersicht und wird später mit konkreten Aufgaben gefüllt.
+  </p>
 </section>
 {% endblock %}

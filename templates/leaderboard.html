@@ -1,26 +1,45 @@
 {% extends "base.html" %}
-{% block title %}Rangliste – Informatik LMS{% endblock %}
-{% block content %}
-<h2 class="mb-3">Rangliste 🏆</h2>
 
-<div class="card p-3">
-  <table class="table align-middle">
-    <thead>
-      <tr>
-        <th>Platz</th>
-        <th>Benutzer</th>
-        <th>Gesamtpunkte</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for user in users %}
-        <tr {% if current_user.id == user.id %}class="table-primary fw-bold"{% endif %}>
-          <td>{{ loop.index }}</td>
-          <td>{{ user.username }}</td>
-          <td>{{ user.total_points }}</td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
+{% block content %}
+
+<section class="card">
+  <h2>Rangliste</h2>
+  <p class="text-muted">
+    Hier siehst du die Gesamtpunkte aller Nutzer – sortiert nach Punktestand.
+  </p>
+</section>
+
+<section class="card">
+  {% if users and users|length > 0 %}
+    <div style="overflow-x:auto;">
+      <table class="table-clean">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Name</th>
+            <th>Gesamtpunkte</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for u in users %}
+            <tr>
+              <td><strong>{{ loop.index }}</strong></td>
+              <td>
+                {% if current_user.is_authenticated and u.id == current_user.id %}
+                  <strong>{{ u.username }} (du)</strong>
+                {% else %}
+                  {{ u.username }}
+                {% endif %}
+              </td>
+              <td>{{ u.total_points }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <p class="text-muted">Noch keine Nutzer vorhanden.</p>
+  {% endif %}
+</section>
+
 {% endblock %}

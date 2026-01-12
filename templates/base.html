@@ -19,29 +19,33 @@
 
         <a class="nav-link" href="{{ url_for('home') }}">Start</a>
 
-        <!-- Lernbereiche Dropdown -->
+        <!-- Lernbereiche Dropdown (klickbar dank focus-within im CSS) -->
         <div class="nav-dropdown">
-          <button class="nav-link nav-dropdown-btn" type="button">
+          <button class="nav-link nav-dropdown-btn" type="button" aria-haspopup="true">
             Lernbereiche ▾
           </button>
 
           <div class="nav-dropdown-menu">
-            <a class="nav-link" href="{{ url_for('digitaler_informationsaustausch') }}">
+            <a href="{{ url_for('digitaler_informationsaustausch') }}">
               Digitaler Informationsaustausch
             </a>
-            <a class="nav-link" href="{{ url_for('datenverarbeitung') }}">
+            <a href="{{ url_for('datenverarbeitung') }}">
               Datenverarbeitung
             </a>
-            <a class="nav-link" href="{{ url_for('programmieren') }}">
+            <a href="{{ url_for('programmieren') }}">
               Programmieren
             </a>
           </div>
         </div>
 
         <a class="nav-link" href="{{ url_for('leaderboard') }}">Rangliste</a>
+
+        {% if current_user.role == "teacher" %}
+          <a class="nav-link" href="{{ url_for('teacher_dashboard') }}">Schülerübersicht</a>
+        {% endif %}
+
         <a class="nav-link" href="{{ url_for('logout') }}">Logout</a>
 
-        <!-- User ganz rechts -->
         <span class="nav-link user-pill">
           👤 {{ current_user.username }} ({{ current_user.total_points }} P.)
         </span>
