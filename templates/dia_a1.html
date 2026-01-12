@@ -1,55 +1,74 @@
 {% extends "base.html" %}
 
-{% block content %}
+{% block title %}DIA A1 – Netzwerkkomponenten{% endblock %}
 
-<section class="card">
-  <h2>DIA A1 – Netzwerkkomponenten</h2>
-  <p class="text-muted">Aufgabe {{ dia_progress }} von {{ dia_total }}</p>
+{% block content %}
+<div class="container mt-4">
+  <h1 class="mb-1">DIA – Aufgabe A1</h1>
+
+  {% if dia_total %}
+    <p class="text-muted mb-3">
+      Fortschritt: {{ dia_progress }} von {{ dia_total }} Aufgaben im Bereich
+      „Digitaler Informationsaustausch“.
+    </p>
+  {% endif %}
+
+  <p class="mb-4">
+    Ordne jeder Beschreibung die passende Netzwerkkomponente zu.
+  </p>
 
   {% if feedback %}
-    <div class="alert">
+    <div class="alert alert-info">
       {{ feedback }}
     </div>
   {% endif %}
 
-  <form method="POST">
+  <form method="post">
     {% for b in beschreibungen %}
-      <div class="card" style="margin-bottom: 1rem;">
-        <p><strong>{{ b.text }}</strong></p>
-
-        <select name="{{ b.id }}">
-          <option value="">-- bitte auswählen --</option>
-          {% for opt in optionen %}
-            <option value="{{ opt }}"
-              {% if geloest and auswahl.get(b.id) == opt %}selected{% endif %}>
-              {{ opt }}
-            </option>
-          {% endfor %}
-        </select>
-
-        {% if geloest %}
-          <p class="text-muted" style="margin-top: .6rem;">
-            <strong>Richtig:</strong> {{ korrekt[b.id] }}<br>
-            <strong>Erklärung:</strong> {{ erklaerung[b.id] }}
+      <div class="card mb-3">
+        <div class="card-body">
+          <p><strong>Zuordnung {{ loop.index }}:</strong><br>
+            {{ b.text }}
           </p>
-        {% endif %}
+
+          <select name="{{ b.id }}" required>
+            <option value="">-- bitte auswählen --</option>
+            {% for opt in optionen %}
+              <option value="{{ opt }}"
+                {% if auswahl and auswahl.get(b.id) == opt %}selected{% endif %}>
+                {{ opt }}
+              </option>
+            {% endfor %}
+          </select>
+
+          {% if geloest %}
+            <p class="mt-2">
+              Richtige Lösung: <strong>{{ korrekt[b.id] }}</strong>
+            </p>
+
+            {% if auswahl.get(b.id) == korrekt[b.id] %}
+              <div class="alert alert-success py-2">
+                ✅ Gut gemacht, weil: {{ erklaerung[b.id] }}
+              </div>
+            {% else %}
+              <div class="alert alert-warning py-2">
+                ❌ Leider nicht richtig. Richtiger wäre <strong>{{ korrekt[b.id] }}</strong>, da: {{ erklaerung[b.id] }}
+              </div>
+            {% endif %}
+          {% endif %}
+        </div>
       </div>
     {% endfor %}
 
-    <button type="submit" class="btn">Auswerten</button>
+    <button type="submit" class="btn btn-primary">
+      Antworten überprüfen
+    </button>
+
+    {% if geloest %}
+      <a href="{{ url_for('dia_next', current='dia_a1') }}" class="btn btn-secondary ms-2">
+        Nächste Aufgabe
+      </a>
+    {% endif %}
   </form>
-</section>
-
-{% if geloest %}
-  <div class="card topic-row">
-    <div>
-      <h3>Nächste Aufgabe</h3>
-      <p class="text-muted">Weiter zur nächsten DIA-Aufgabe.</p>
-    </div>
-    <div class="topic-actions">
-      <a class="btn" href="{{ url_for('dia_next', current='dia_a1') }}">Weiter</a>
-    </div>
-  </div>
-{% endif %}
-
+</div>
 {% endblock %}
