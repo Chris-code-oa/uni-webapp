@@ -1,91 +1,69 @@
 {% extends "base.html" %}
-
-{% block title %}DIA A5 – URLs prüfen und korrigieren{% endblock %}
+{% block title %}DIA A5 – URLs korrigieren{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <h1 class="mb-1">DIA – Aufgabe A5</h1>
+<section class="card">
+  <h2>DIA A5 – URLs korrigieren</h2>
+  <p class="text-muted">Aufgabe {{ dia_progress }} von {{ dia_total }}</p>
 
-    {% if dia_total %}
-        <p class="text-muted mb-3">
-            Fortschritt: {{ dia_progress }} von {{ dia_total }} Aufgaben im Bereich
-            „Digitaler Informationsaustausch“.
-        </p>
-    {% endif %}
-
-    <p class="mb-4">
-        Überprüfe die folgenden Internetadressen. Wähle, welcher Fehler in jeder URL steckt,
-        und schreibe die richtige URL darunter.
-    </p>
-
-    {% if feedback %}
-        <div class="alert alert-info">{{ feedback }}</div>
-    {% endif %}
-
-    <form method="post">
-        {% for a in aufgaben %}
-            <div class="card mb-4">
-                <div class="card-body">
-                    <h5 class="card-title">URL {{ loop.index }}</h5>
-
-                    <p><strong>Fehlerhafte URL:</strong> {{ a.fehler_url }}</p>
-
-                    <p>Wähle den Fehler:</p>
-                    <select class="form-select" name="{{ a.id }}_fehler" required>
-                        <option value="">-- bitte auswählen --</option>
-                        {% for opt in optionen %}
-                            {% if auswahl_fehler and auswahl_fehler.get(a.id) == opt %}
-                                <option value="{{ opt }}" selected>{{ opt }}</option>
-                            {% else %}
-                                <option value="{{ opt }}">{{ opt }}</option>
-                            {% endif %}
-                        {% endfor %}
-                    </select>
-
-                    <p class="mt-3">Korrigierte URL eingeben:</p>
-                    <input type="text"
-                           class="form-control"
-                           name="{{ a.id }}_korrekt"
-                           placeholder="https://www.bycs.de"
-                           required
-                           value="{% if auswahl_korrekt %}{{ auswahl_korrekt.get(a.id) }}{% endif %}">
-
-                    {% if geloest %}
-  {% set fehler_ok = (auswahl_fehler.get(a.id) == korrekt_fehler[a.id]) %}
-  {% set url_ok = (auswahl_korrekt.get(a.id)|trim == a.korrekt) %}
-
-  <p class="mt-2">
-    Richtige Lösung: <strong>{{ a.korrekt }}</strong>
+  <p class="mb-3">
+    Markiere den Fehler (Dropdown) und schreibe die korrekte URL ab.
   </p>
 
-  {% if fehler_ok and url_ok %}
-    <div class="alert alert-success py-2">
-      ✅ Sehr gut! Du hast Fehler und korrekte URL richtig erkannt.<br>
-      Begründung: {{ erklaerung[a.id] }}
-    </div>
-  {% else %}
-    <div class="alert alert-warning py-2">
-      ❌ Nicht ganz richtig.<br>
-      {% if not fehler_ok %}
-        Fehlerart: richtig wäre <strong>{{ korrekt_fehler[a.id] }}</strong>.<br>
-      {% endif %}
-      {% if not url_ok %}
-        URL: richtig wäre <strong>{{ a.korrekt }}</strong>.<br>
-      {% endif %}
-      Begründung: {{ erklaerung[a.id] }}
-    </div>
+  {% if feedback %}
+    <div class="alert">{{ feedback }}</div>
   {% endif %}
-{% endif %}
-                </div>
-            </div>
-        {% endfor %}
 
-        <button type="submit" class="btn btn-primary">Antworten überprüfen</button>
+  <form method="post">
+    {% for a in aufgaben %}
+      <div class="card mb-3">
+        <p><strong>Fehlerhafte URL:</strong> <code>{{ a.fehler_url }}</code></p>
 
-        <a href="{{ url_for('dia_next', current='dia_a5') }}"
-           class="btn btn-secondary ms-2">
-            Nächste Aufgabe
-        </a>
-    </form>
-</div>
+        <label>Wo liegt der Fehler?</label>
+        <select name="{{ a.id }}_fehler" required>
+          <option value="">-- bitte auswählen --</option>
+          {% for opt in optionen %}
+            <option value="{{ opt }}" {% if auswahl_fehler.get(a.id) == opt %}selected{% endif %}>
+              {{ opt }}
+            </option>
+          {% endfor %}
+        </select>
+
+        <label class="mt-2">Korrekte URL:</label>
+        <input type="text" name="{{ a.id }}_korrekt" value="{{ auswahl_korrekt.get(a.id,'') }}" required>
+
+        {% if geloest %}
+          <div class="mt-2">
+            <p class="text-muted mb-2">
+              Richtige Fehlerart: <strong>{{ korrekt_fehler[a.id] }}</strong><br>
+              Korrekte URL: <strong>{{ a.korrekt }}</strong>
+            </p>
+
+            {% set ok_f = (auswahl_fehler.get(a.id) == korrekt_fehler[a.id]) %}
+            {% set ok_u = ((auswahl_korrekt.get(a.id,'')|trim) == a.korrekt) %}
+
+            {% if ok_f and ok_u %}
+              <div class="alert alert-success">
+                ✅ Gut gemacht, weil: {{ erklaerung[a.id] }}
+              </div>
+            {% else %}
+              <div class="alert alert-error">
+                ❌ Leider nicht richtig.
+                {% if not ok_f %} Fehlerart passt nicht. {% endif %}
+                {% if not ok_u %} URL ist nicht korrekt. {% endif %}
+                {{ erklaerung[a.id] }}
+              </div>
+            {% endif %}
+          </div>
+        {% endif %}
+      </div>
+    {% endfor %}
+
+    <button type="submit" class="btn btn-primary">Antworten überprüfen</button>
+    <a href="{{ url_for('dia_next', current='dia_a5') }}" class="btn btn-outline" style="margin-left:.5rem;">
+      Abschließen
+    </a>
+  </form>
+</section>
 {% endblock %}
+

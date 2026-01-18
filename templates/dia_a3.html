@@ -1,80 +1,55 @@
 {% extends "base.html" %}
-
-{% block title %}DIA A3 – Richtig/Falsch Netzwerkgrundlagen{% endblock %}
+{% block title %}DIA A3 – Richtig/Falsch{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <h1 class="mb-1">DIA – Aufgabe A3</h1>
+<section class="card">
+  <h2>DIA A3 – Richtig oder Falsch?</h2>
+  <p class="text-muted">Aufgabe {{ dia_progress }} von {{ dia_total }}</p>
 
-    {% if dia_total %}
-        <p class="text-muted mb-3">
-            Fortschritt: {{ dia_progress }} von {{ dia_total }} Aufgaben im Bereich
-            „Digitaler Informationsaustausch“.
-        </p>
-    {% endif %}
-
-    <p class="mb-4">
-        Lies dir die Aussagen durch und entscheide, ob sie <strong>richtig</strong> oder <strong>falsch</strong> sind.
-    </p>
-
-    {% if feedback %}
-        <div class="alert alert-info">
-            {{ feedback }}
-        </div>
-    {% endif %}
-
-    <form method="post">
-        {% for a in aussagen %}
-            <div class="card mb-3">
-                <div class="card-body">
-                    <p><strong>Aussage {{ loop.index }}:</strong><br>
-                        {{ a.text }}
-                    </p>
-
-                    {% for opt in optionen %}
-                        <div class="form-check">
-                            <input
-                                class="form-check-input"
-                                type="radio"
-                                name="{{ a.id }}"
-                                id="{{ a.id }}_{{ loop.index }}_{{ loop.index0 }}"
-                                value="{{ opt }}"
-                                {% if auswahl and auswahl.get(a.id) == opt %}checked{% endif %}
-                                required
-                            >
-                            <label class="form-check-label" for="{{ a.id }}_{{ loop.index }}_{{ loop.index0 }}">
-                                {{ opt }}
-                            </label>
-                        </div>
-                    {% endfor %}
-
-                    {% if geloest %}
-  <p class="mt-2">
-    Richtige Lösung: <strong>{{ korrekt[a.id] }}</strong>
-  </p>
-
-  {% if auswahl.get(a.id) == korrekt[a.id] %}
-    <div class="alert alert-success py-2">
-      ✅ Gut gemacht, weil: {{ erklaerung[a.id] }}
-    </div>
-  {% else %}
-    <div class="alert alert-warning py-2">
-      ❌ Leider nicht richtig. Richtiger wäre <strong>{{ korrekt[a.id] }}</strong>, da: {{ erklaerung[a.id] }}
-    </div>
+  {% if feedback %}
+    <div class="alert">{{ feedback }}</div>
   {% endif %}
-{% endif %}
 
-                </div>
-            </div>
+  <form method="post">
+    {% for a in aussagen %}
+      <div class="card mb-3">
+        <p><strong>Aussage {{ loop.index }}:</strong><br>{{ a.text }}</p>
+
+        {% for opt in optionen %}
+          <div class="form-check">
+            <input
+              type="radio"
+              name="{{ a.id }}"
+              value="{{ opt }}"
+              {% if auswahl.get(a.id) == opt %}checked{% endif %}
+              required
+            >
+            <label>{{ opt }}</label>
+          </div>
         {% endfor %}
 
-        <button type="submit" class="btn btn-primary">
-            Antworten überprüfen
-        </button>
+        {% if geloest %}
+          <div class="mt-2">
+            <p class="text-muted mb-2">Richtige Lösung: <strong>{{ korrekt[a.id] }}</strong></p>
 
-        <a href="{{ url_for('dia_next', current='dia_a3') }}" class="btn btn-secondary ms-2">
-            Nächste Aufgabe
-        </a>
-    </form>
-</div>
+            {% if auswahl.get(a.id) == korrekt[a.id] %}
+              <div class="alert alert-success">
+                ✅ Gut gemacht, weil: {{ erklaerung[a.id] }}
+              </div>
+            {% else %}
+              <div class="alert alert-error">
+                ❌ Leider nicht richtig. Richtig wäre <strong>{{ korrekt[a.id] }}</strong>, da: {{ erklaerung[a.id] }}
+              </div>
+            {% endif %}
+          </div>
+        {% endif %}
+      </div>
+    {% endfor %}
+
+    <button type="submit" class="btn btn-primary">Antworten überprüfen</button>
+    <a href="{{ url_for('dia_next', current='dia_a3') }}" class="btn btn-outline" style="margin-left:.5rem;">
+      Nächste Aufgabe
+    </a>
+  </form>
+</section>
 {% endblock %}

@@ -1,68 +1,30 @@
 {% extends "base.html" %}
+{% block title %}DIA – Zusammenfassung{% endblock %}
 
 {% block content %}
-
 <section class="card">
-    <h2>Digitaler Informationsaustausch – Zusammenfassung</h2>
+  <h2>Digitaler Informationsaustausch – Ergebnis</h2>
 
-    <p class="text-muted">
-        Du hast alle Aufgaben in diesem Lernbereich bearbeitet.
-        Hier siehst du dein Ergebnis.
-    </p>
+  <p class="text-muted">
+    Du hast alle {{ total_tasks }} Aufgaben durchlaufen.
+  </p>
 
-    <ul class="steps">
-        <li><strong>Bearbeitete Aufgaben:</strong> {{ total_tasks }} von {{ total_tasks }}</li>
-        <li><strong>Erreichte Punkte:</strong> {{ dia_points }}</li>
-    </ul>
+  <div class="alert alert-success">
+    <strong>Durchlauf-Punkte:</strong> {{ dia_points }}<br>
+    <strong>Bestwert (DIA):</strong> {{ dia_best }}<br>
+    <strong>Gesamtversuche (DIA):</strong> {{ dia_attempts }}
+  </div>
 
-    <p class="text-muted">
-        Du kannst den Lernbereich wiederholen oder mit einem neuen Themenbereich weitermachen.
-    </p>
+  <div class="topic-row mt-3">
+    <div>
+      <h3>Was möchtest du als Nächstes lernen?</h3>
+      <p class="text-muted">Du kannst wiederholen oder mit einem neuen Lernbereich starten.</p>
+    </div>
+    <div class="topic-actions">
+      <a class="btn btn-primary" href="{{ url_for('dia_restart') }}">DIA wiederholen</a>
+      <a class="btn btn-outline" href="{{ url_for('datenverarbeitung') }}" style="margin-left:.5rem;">Datenverarbeitung</a>
+      <a class="btn btn-outline" href="{{ url_for('programmieren') }}" style="margin-left:.5rem;">Programmieren</a>
+    </div>
+  </div>
 </section>
-
-<div class="card topic-row">
-    <div>
-        <h3>Wie möchtest du weitermachen?</h3>
-        <p class="text-muted">
-            Wiederhole die Aufgaben oder starte einen neuen Lernbereich.
-        </p>
-    </div>
-
-    <div class="topic-actions">
-        <a href="{{ url_for('dia_restart') }}" class="btn">
-            DIA wiederholen
-        </a>
-    </div>
-</div>
-
-<div class="card topic-row">
-    <div>
-        <h3>Nächster Lernbereich: Datenverarbeitung</h3>
-        <p class="text-muted">
-            Lerne, wie Daten entstehen, verarbeitet und ausgewertet werden.
-        </p>
-    </div>
-
-    <div class="topic-actions">
-        <a href="{{ url_for('datenverarbeitung') }}" class="btn">
-            Zu Datenverarbeitung
-        </a>
-    </div>
-</div>
-
-<div class="card topic-row">
-    <div>
-        <h3>Nächster Lernbereich: Programmieren</h3>
-        <p class="text-muted">
-            Lerne Grundlagen der Programmierung und erstelle eigene Programme.
-        </p>
-    </div>
-
-    <div class="topic-actions">
-        <a href="{{ url_for('programmieren') }}" class="btn">
-            Zu Programmieren
-        </a>
-    </div>
-</div>
-
 {% endblock %}

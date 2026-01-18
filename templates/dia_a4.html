@@ -1,85 +1,62 @@
 {% extends "base.html" %}
-
-{% block title %}DIA A4 – Heimnetzwerke mit IP-Adressen{% endblock %}
+{% block title %}DIA A4 – Heimnetzwerke{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <h1 class="mb-1">DIA – Aufgabe A4</h1>
+<section class="card">
+  <h2>DIA A4 – Heimnetzwerke prüfen</h2>
+  <p class="text-muted">Aufgabe {{ dia_progress }} von {{ dia_total }}</p>
 
-    {% if dia_total %}
-        <p class="text-muted mb-3">
-            Fortschritt: {{ dia_progress }} von {{ dia_total }} Aufgaben im Bereich
-            „Digitaler Informationsaustausch“.
-        </p>
-    {% endif %}
-
-    <p class="mb-4">
-        Im Folgenden siehst du drei Heimnetzwerke, die mit Hilfe des Programms „Filius“ nachgebaut wurden.
-        Wähle für jedes Netzwerk aus, ob es so funktionieren kann oder welcher Fehler vorliegt.
-    </p>
-
-    {% if feedback %}
-        <div class="alert alert-info">
-            {{ feedback }}
-        </div>
-    {% endif %}
-
-    <form method="post">
-        {% for net in netzwerke %}
-            <div class="card mb-4">
-                <div class="card-body">
-                    <h5 class="card-title">{{ net.name }}</h5>
-
-                    <div class="mb-3 text-center">
-                        <img src="{{ url_for('static', filename='img/' ~ net.image) }}"
-                             alt="{{ net.name }}"
-                             class="img-fluid"
-                             style="max-height: 220px;">
-                    </div>
-
-                    <p class="mb-2">
-                        Wähle die passende Erklärung für {{ net.name }}:
-                    </p>
-
-                    <select name="{{ net.id }}" class="form-select" required>
-                        <option value="">-- bitte auswählen --</option>
-                        {% for opt in optionen %}
-                            {% if auswahl and auswahl.get(net.id) == opt %}
-                                <option value="{{ opt }}" selected>{{ opt }}</option>
-                            {% else %}
-                                <option value="{{ opt }}">{{ opt }}</option>
-                            {% endif %}
-                        {% endfor %}
-                    </select>
-
-                    {% if geloest %}
-  <p class="mt-2">
-    Richtige Erklärung: <strong>{{ korrekt[net.id] }}</strong>
+  <p class="mb-3">
+    Wähle pro Netzwerk, ob es funktionieren kann und wo der Fehler liegt.
   </p>
 
-  {% if auswahl.get(net.id) == korrekt[net.id] %}
-    <div class="alert alert-success py-2">
-      ✅ Gut gemacht, weil: {{ erklaerung[net.id] }}
-    </div>
-  {% else %}
-    <div class="alert alert-warning py-2">
-      ❌ Leider nicht richtig. Richtiger wäre: <strong>{{ korrekt[net.id] }}</strong><br>
-      Grund: {{ erklaerung[net.id] }}
-    </div>
+  {% if feedback %}
+    <div class="alert">{{ feedback }}</div>
   {% endif %}
-{% endif %}
 
-                </div>
-            </div>
-        {% endfor %}
+  <form method="post">
+    {% for n in netzwerke %}
+      <div class="card mb-3">
+        <h3 class="mb-2">{{ n.name }}</h3>
 
-        <button type="submit" class="btn btn-primary">
-            Antworten überprüfen
-        </button>
+        <img
+          src="{{ url_for('static', filename='img/' ~ n.image) }}"
+          alt="{{ n.name }}"
+        >
 
-        <a href="{{ url_for('dia_next', current='dia_a4') }}" class="btn btn-secondary ms-2">
-            Nächste Aufgabe
-        </a>
-    </form>
-</div>
+        <div class="mt-2">
+          <select name="{{ n.id }}" required>
+            <option value="">-- bitte auswählen --</option>
+            {% for opt in optionen %}
+              <option value="{{ opt }}" {% if auswahl.get(n.id) == opt %}selected{% endif %}>
+                {{ opt }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        {% if geloest %}
+          <div class="mt-2">
+            <p class="text-muted mb-2">Richtige Lösung: <strong>{{ korrekt[n.id] }}</strong></p>
+
+            {% if auswahl.get(n.id) == korrekt[n.id] %}
+              <div class="alert alert-success">
+                ✅ Gut gemacht, weil: {{ erklaerung[n.id] }}
+              </div>
+            {% else %}
+              <div class="alert alert-error">
+                ❌ Leider nicht richtig. Richtig wäre <strong>{{ korrekt[n.id] }}</strong>, da: {{ erklaerung[n.id] }}
+              </div>
+            {% endif %}
+          </div>
+        {% endif %}
+      </div>
+    {% endfor %}
+
+    <button type="submit" class="btn btn-primary">Antworten überprüfen</button>
+    <a href="{{ url_for('dia_next', current='dia_a4') }}" class="btn btn-outline" style="margin-left:.5rem;">
+      Nächste Aufgabe
+    </a>
+  </form>
+</section>
 {% endblock %}

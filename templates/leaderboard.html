@@ -1,44 +1,81 @@
 {% extends "base.html" %}
 
+{% block title %}Rangliste{% endblock %}
+
 {% block content %}
 
 <section class="card">
   <h2>Rangliste</h2>
   <p class="text-muted">
-    Hier siehst du die Gesamtpunkte aller Nutzer – sortiert nach Punktestand.
+    Anzeige pro Lernbereich: <strong>Bestleistung</strong> (Max. Punkte) + Datum der Bestleistung.
+    Zusätzlich werden die <strong>Versuche</strong> (Anzahl Durchläufe) gezählt.
   </p>
 </section>
 
 <section class="card">
-  {% if users and users|length > 0 %}
+  {% if rows and rows|length > 0 %}
     <div style="overflow-x:auto;">
       <table class="table-clean">
         <thead>
           <tr>
             <th>#</th>
             <th>Name</th>
-            <th>Gesamtpunkte</th>
+
+            <th>DIA Best</th>
+            <th>DIA Datum</th>
+            <th>DIA Versuche</th>
+
+            <th>DV Best</th>
+            <th>DV Datum</th>
+            <th>DV Versuche</th>
+
+            <th>PRG Best</th>
+            <th>PRG Datum</th>
+            <th>PRG Versuche</th>
+
+            <th>Gesamtversuche</th>
+            <th>Summe Best</th>
           </tr>
         </thead>
+
         <tbody>
-          {% for u in users %}
+          {% for r in rows %}
+            {% set total_attempts = (r.dia_attempts + r.dv_attempts + r.prg_attempts) %}
+            {% set best_sum = (r.dia_best + r.dv_best + r.prg_best) %}
+
             <tr>
               <td><strong>{{ loop.index }}</strong></td>
+
               <td>
-                {% if current_user.is_authenticated and u.id == current_user.id %}
-                  <strong>{{ u.username }} (du)</strong>
+                {% if current_user.is_authenticated and r.User.id == current_user.id %}
+                  <strong>{{ r.User.username }} (du)</strong>
                 {% else %}
-                  {{ u.username }}
+                  {{ r.User.username }}
                 {% endif %}
               </td>
-              <td>{{ u.total_points }}</td>
+
+              <td>{{ r.dia_best }}</td>
+              <td>{% if r.dia_best_at %}{{ r.dia_best_at.strftime("%d.%m.%Y %H:%M") }}{% else %}–{% endif %}</td>
+              <td>{{ r.dia_attempts }}</td>
+
+              <td>{{ r.dv_best }}</td>
+              <td>{% if r.dv_best_at %}{{ r.dv_best_at.strftime("%d.%m.%Y %H:%M") }}{% else %}–{% endif %}</td>
+              <td>{{ r.dv_attempts }}</td>
+
+              <td>{{ r.prg_best }}</td>
+              <td>{% if r.prg_best_at %}{{ r.prg_best_at.strftime("%d.%m.%Y %H:%M") }}{% else %}–{% endif %}</td>
+              <td>{{ r.prg_attempts }}</td>
+
+              <td><strong>{{ total_attempts }}</strong></td>
+              <td><strong>{{ best_sum }}</strong></td>
             </tr>
           {% endfor %}
         </tbody>
       </table>
     </div>
+
   {% else %}
-    <p class="text-muted">Noch keine Nutzer vorhanden.</p>
+    <p class="text-muted">Noch keine Bestwerte vorhanden.</p>
   {% endif %}
 </section>
 

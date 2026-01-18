@@ -10,7 +10,7 @@ from flask_login import (
     login_required,
     current_user,
 )
-from sqlalchemy import func
+from sqlalchemy import func, and_
 
 from models import db, User, Result
 
@@ -53,25 +53,48 @@ def teacher_required(func_):
         if getattr(current_user, "role", "student") != "teacher":
             abort(403)
         return func_(*args, **kwargs)
-
     return wrapper
 
 
 # ---------------------------------------------------------
-# ⭐ Hilfsfunktionen: Punkte + DIA-Fortschritt
+# ⭐ Hilfsfunktionen: Result speichern + Bestwerte
 # ---------------------------------------------------------
-def add_points(quiz_name: str, points: int):
+def add_result(quiz_name: str, points: int):
+    """Speichert einen Result-Eintrag mit Zeitstempel (created_at)."""
     if not current_user.is_authenticated:
         return
-    if points <= 0:
-        return
+    if points is None:
+        points = 0
+    points = int(points)
+    if points < 0:
+        points = 0
 
-    result = Result(quiz_name=quiz_name, points=points, user_id=current_user.id)
-    db.session.add(result)
-    current_user.total_points += points
+    r = Result(quiz_name=quiz_name, points=points, user_id=current_user.id)
+    db.session.add(r)
     db.session.commit()
 
 
+def recompute_best_total_points(user_id: int):
+    """
+    Setzt user.total_points auf die Summe der Bestwerte je Bereich:
+    DIA_RUN + DV_RUN + PRG_RUN
+    => kein endloses Addieren.
+    """
+    user = User.query.get(user_id)
+    if not user:
+        return
+
+    dia_best = db.session.query(func.max(Result.points)).filter_by(user_id=user_id, quiz_name="DIA_RUN").scalar() or 0
+    dv_best = db.session.query(func.max(Result.points)).filter_by(user_id=user_id, quiz_name="DV_RUN").scalar() or 0
+    prg_best = db.session.query(func.max(Result.points)).filter_by(user_id=user_id, quiz_name="PRG_RUN").scalar() or 0
+
+    user.total_points = int(dia_best) + int(dv_best) + int(prg_best)
+    db.session.commit()
+
+
+# ---------------------------------------------------------
+# 🧩 DIA: Fortschritt & Scoring (Session-basiert)
+# ---------------------------------------------------------
 DIA_TASK_VIEWS = ["dia_a1", "dia_a2", "dia_a3", "dia_a4", "dia_a5"]
 
 
@@ -95,6 +118,11 @@ def get_dia_progress_for_view(current_view: str):
     if current_view in DIA_TASK_VIEWS and current_view not in done:
         count += 1
     return count, len(DIA_TASK_VIEWS)
+
+
+def add_dia_run_points(points: int):
+    """Addiert Punkte in den aktuellen DIA-Durchlauf (Run)."""
+    session["dia_run_points"] = int(session.get("dia_run_points", 0)) + int(points or 0)
 
 
 # ---------------------------------------------------------
@@ -159,23 +187,11 @@ def teacher_dashboard():
             Result.user_id.label("user_id"),
             func.count(Result.id).label("attempts"),
             func.max(Result.created_at).label("last_activity"),
-            func.sum(Result.points).label("sum_points"),
         )
         .group_by(Result.user_id)
         .all()
     )
     stats_map = {s.user_id: s for s in stats}
-
-    dia_stats = (
-        db.session.query(
-            Result.user_id.label("user_id"),
-            func.sum(Result.points).label("dia_points"),
-        )
-        .filter(Result.quiz_name.like("DIA_%"))
-        .group_by(Result.user_id)
-        .all()
-    )
-    dia_map = {d.user_id: int(d.dia_points or 0) for d in dia_stats}
 
     rows = []
     for u in students:
@@ -186,7 +202,6 @@ def teacher_dashboard():
                 "total_points": int(getattr(u, "total_points", 0) or 0),
                 "attempts": int(st.attempts) if st else 0,
                 "last_activity": st.last_activity if st else None,
-                "dia_points": int(dia_map.get(u.id, 0)),
             }
         )
 
@@ -226,14 +241,29 @@ def dia_next():
 @app.route("/dia/summary")
 @login_required
 def dia_summary():
-    results = (
-        Result.query.filter_by(user_id=current_user.id)
-        .filter(Result.quiz_name.like("DIA_%"))
-        .all()
-    )
-    dia_points = sum(r.points for r in results)
+    """
+    Speichert EINEN Durchlauf als DIA_RUN (mit created_at),
+    zeigt: Run-Punkte, Bestwert DIA, DIA-Versuche.
+    """
+    run_points = int(session.get("dia_run_points", 0))
+    already_saved = bool(session.get("dia_run_saved", False))
+
+    if not already_saved:
+        add_result("DIA_RUN", run_points)
+        session["dia_run_saved"] = True
+        recompute_best_total_points(current_user.id)
+
+    dia_best = db.session.query(func.max(Result.points)).filter_by(user_id=current_user.id, quiz_name="DIA_RUN").scalar() or 0
+    dia_attempts = db.session.query(func.count(Result.id)).filter_by(user_id=current_user.id, quiz_name="DIA_RUN").scalar() or 0
+
     total_tasks = len(DIA_TASK_VIEWS)
-    return render_template("dia_summary.html", dia_points=dia_points, total_tasks=total_tasks)
+    return render_template(
+        "dia_summary.html",
+        dia_points=run_points,
+        total_tasks=total_tasks,
+        dia_best=int(dia_best),
+        dia_attempts=int(dia_attempts),
+    )
 
 
 @app.route("/dia/restart")
@@ -241,6 +271,8 @@ def dia_summary():
 def dia_restart():
     session["dia_done"] = []
     session["dia_scored"] = []
+    session["dia_run_points"] = 0
+    session["dia_run_saved"] = False
     return redirect(url_for("dia_next"))
 
 
@@ -256,8 +288,11 @@ def dia_a1():
         {"id": "b3", "text": "… ist ein zentraler Speicher für ein lokales Netzwerk."},
         {"id": "b4", "text": "… ist ein Rechner, der in einem Netzwerk bestimmte Aufgaben übernimmt."},
     ]
+
     optionen = ["Router", "Client", "NAS", "Server"]
+
     korrekt = {"b1": "Router", "b2": "Client", "b3": "NAS", "b4": "Server"}
+
     erklaerung = {
         "b1": "Ein Router verbindet das interne Netzwerk mit dem Internet (Routing zwischen Netzen).",
         "b2": "Ein Client ist ein internetfähiges Endgerät, das Dienste nutzt (z. B. PC, Laptop).",
@@ -281,12 +316,12 @@ def dia_a1():
 
         scored = get_dia_scored()
         if "dia_a1" not in scored:
-            add_points("DIA_A1", punkte)
+            add_result("DIA_A1", punkte)       # Detailverlauf
+            add_dia_run_points(punkte)         # Run-Summe
             scored.append("dia_a1")
             session["dia_scored"] = scored
 
     dia_progress, dia_total = get_dia_progress_for_view("dia_a1")
-
     return render_template(
         "dia_a1.html",
         beschreibungen=beschreibungen,
@@ -313,7 +348,9 @@ def dia_a2():
         {"id": "q3", "text": "Welches Gerät ist hauptsächlich dafür da, Dokumente aus dem Netzwerk auf Papier auszugeben?", "optionen": ["Beamer", "Drucker", "Server"]},
         {"id": "q4", "text": "Welches Gerät wird meistens genutzt, um Dienste wie Webseiten oder Datenbanken im Netzwerk bereitzustellen?", "optionen": ["Client", "Server", "Smartphone"]},
     ]
+
     korrekt = {"q1": "Switch", "q2": "Access Point", "q3": "Drucker", "q4": "Server"}
+
     erklaerung = {
         "q1": "Ein Switch verteilt Daten innerhalb eines LAN und verbindet Geräte miteinander.",
         "q2": "Ein Access Point stellt WLAN bereit, damit Geräte drahtlos ins Netzwerk kommen.",
@@ -338,12 +375,12 @@ def dia_a2():
 
         scored = get_dia_scored()
         if "dia_a2" not in scored:
-            add_points("DIA_A2", punkte)
+            add_result("DIA_A2", punkte)
+            add_dia_run_points(punkte)
             scored.append("dia_a2")
             session["dia_scored"] = scored
 
     dia_progress, dia_total = get_dia_progress_for_view("dia_a2")
-
     return render_template(
         "dia_a2.html",
         fragen=fragen,
@@ -369,8 +406,11 @@ def dia_a3():
         {"id": "s3", "text": "Ein Access Point ermöglicht drahtlose Verbindungen für Geräte wie Smartphones und Laptops."},
         {"id": "s4", "text": "Ein NAS wird im Netzwerk hauptsächlich als zentraler Speicher verwendet."},
     ]
+
     optionen = ["Richtig", "Falsch"]
+
     korrekt = {"s1": "Richtig", "s2": "Falsch", "s3": "Richtig", "s4": "Richtig"}
+
     erklaerung = {
         "s1": "Ein Router verbindet unterschiedliche Netzwerke (z. B. Heimnetz ↔ Internet).",
         "s2": "Ein Switch verbindet Geräte im LAN; die Internetverbindung macht typischerweise der Router.",
@@ -395,12 +435,12 @@ def dia_a3():
 
         scored = get_dia_scored()
         if "dia_a3" not in scored:
-            add_points("DIA_A3", punkte)
+            add_result("DIA_A3", punkte)
+            add_dia_run_points(punkte)
             scored.append("dia_a3")
             session["dia_scored"] = scored
 
     dia_progress, dia_total = get_dia_progress_for_view("dia_a3")
-
     return render_template(
         "dia_a3.html",
         aussagen=aussagen,
@@ -463,12 +503,12 @@ def dia_a4():
 
         scored = get_dia_scored()
         if "dia_a4" not in scored:
-            add_points("DIA_A4", punkte)
+            add_result("DIA_A4", punkte)
+            add_dia_run_points(punkte)
             scored.append("dia_a4")
             session["dia_scored"] = scored
 
     dia_progress, dia_total = get_dia_progress_for_view("dia_a4")
-
     return render_template(
         "dia_a4.html",
         netzwerke=netzwerke,
@@ -537,12 +577,12 @@ def dia_a5():
 
         scored = get_dia_scored()
         if "dia_a5" not in scored:
-            add_points("DIA_A5", punkte)
+            add_result("DIA_A5", punkte)
+            add_dia_run_points(punkte)
             scored.append("dia_a5")
             session["dia_scored"] = scored
 
     dia_progress, dia_total = get_dia_progress_for_view("dia_a5")
-
     return render_template(
         "dia_a5.html",
         aufgaben=aufgaben,
@@ -587,7 +627,6 @@ def login():
         password = request.form.get("password")
 
         user = User.query.filter_by(username=username).first()
-
         if user and user.check_password(password):
             login_user(user)
             return redirect(url_for("dashboard"))
@@ -605,7 +644,7 @@ def logout():
 
 
 # ---------------------------------------------------------
-# 🔥 Ergebnisse & Rangliste
+# 🔥 Ergebnisse
 # ---------------------------------------------------------
 @app.route("/me/results")
 @login_required
@@ -614,11 +653,116 @@ def my_results():
     return render_template("my_results.html", results=results)
 
 
+# ---------------------------------------------------------
+# 🏆 Rangliste: Bestwerte + Datum + Attempts pro Bereich
+# ---------------------------------------------------------
 @app.route("/leaderboard")
 @login_required
 def leaderboard():
-    users = User.query.order_by(User.total_points.desc()).all()
-    return render_template("leaderboard.html", users=users)
+    # Bestwerte je User
+    dia_best = (
+        db.session.query(Result.user_id.label("user_id"), func.max(Result.points).label("best"))
+        .filter(Result.quiz_name == "DIA_RUN")
+        .group_by(Result.user_id)
+        .subquery()
+    )
+    dv_best = (
+        db.session.query(Result.user_id.label("user_id"), func.max(Result.points).label("best"))
+        .filter(Result.quiz_name == "DV_RUN")
+        .group_by(Result.user_id)
+        .subquery()
+    )
+    prg_best = (
+        db.session.query(Result.user_id.label("user_id"), func.max(Result.points).label("best"))
+        .filter(Result.quiz_name == "PRG_RUN")
+        .group_by(Result.user_id)
+        .subquery()
+    )
+
+    # Datum zu Bestwert (max created_at, wenn points==best)
+    dia_best_at = (
+        db.session.query(Result.user_id.label("user_id"), func.max(Result.created_at).label("best_at"))
+        .join(dia_best, and_(
+            Result.user_id == dia_best.c.user_id,
+            Result.points == dia_best.c.best,
+            Result.quiz_name == "DIA_RUN"
+        ))
+        .group_by(Result.user_id)
+        .subquery()
+    )
+    dv_best_at = (
+        db.session.query(Result.user_id.label("user_id"), func.max(Result.created_at).label("best_at"))
+        .join(dv_best, and_(
+            Result.user_id == dv_best.c.user_id,
+            Result.points == dv_best.c.best,
+            Result.quiz_name == "DV_RUN"
+        ))
+        .group_by(Result.user_id)
+        .subquery()
+    )
+    prg_best_at = (
+        db.session.query(Result.user_id.label("user_id"), func.max(Result.created_at).label("best_at"))
+        .join(prg_best, and_(
+            Result.user_id == prg_best.c.user_id,
+            Result.points == prg_best.c.best,
+            Result.quiz_name == "PRG_RUN"
+        ))
+        .group_by(Result.user_id)
+        .subquery()
+    )
+
+    # Attempts je Bereich (Anzahl Runs)
+    dia_attempts = (
+        db.session.query(Result.user_id.label("user_id"), func.count(Result.id).label("attempts"))
+        .filter(Result.quiz_name == "DIA_RUN")
+        .group_by(Result.user_id)
+        .subquery()
+    )
+    dv_attempts = (
+        db.session.query(Result.user_id.label("user_id"), func.count(Result.id).label("attempts"))
+        .filter(Result.quiz_name == "DV_RUN")
+        .group_by(Result.user_id)
+        .subquery()
+    )
+    prg_attempts = (
+        db.session.query(Result.user_id.label("user_id"), func.count(Result.id).label("attempts"))
+        .filter(Result.quiz_name == "PRG_RUN")
+        .group_by(Result.user_id)
+        .subquery()
+    )
+
+    rows = (
+        db.session.query(
+            User,
+            func.coalesce(dia_best.c.best, 0).label("dia_best"),
+            dia_best_at.c.best_at.label("dia_best_at"),
+            func.coalesce(dia_attempts.c.attempts, 0).label("dia_attempts"),
+
+            func.coalesce(dv_best.c.best, 0).label("dv_best"),
+            dv_best_at.c.best_at.label("dv_best_at"),
+            func.coalesce(dv_attempts.c.attempts, 0).label("dv_attempts"),
+
+            func.coalesce(prg_best.c.best, 0).label("prg_best"),
+            prg_best_at.c.best_at.label("prg_best_at"),
+            func.coalesce(prg_attempts.c.attempts, 0).label("prg_attempts"),
+        )
+        .filter(User.role != "teacher")
+        .outerjoin(dia_best, User.id == dia_best.c.user_id)
+        .outerjoin(dia_best_at, User.id == dia_best_at.c.user_id)
+        .outerjoin(dia_attempts, User.id == dia_attempts.c.user_id)
+
+        .outerjoin(dv_best, User.id == dv_best.c.user_id)
+        .outerjoin(dv_best_at, User.id == dv_best_at.c.user_id)
+        .outerjoin(dv_attempts, User.id == dv_attempts.c.user_id)
+
+        .outerjoin(prg_best, User.id == prg_best.c.user_id)
+        .outerjoin(prg_best_at, User.id == prg_best_at.c.user_id)
+        .outerjoin(prg_attempts, User.id == prg_attempts.c.user_id)
+        .all()
+    )
+
+    rows = sorted(rows, key=lambda r: (r.dia_best + r.dv_best + r.prg_best), reverse=True)
+    return render_template("leaderboard.html", rows=rows)
 
 
 # ---------------------------------------------------------
