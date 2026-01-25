@@ -176,36 +176,106 @@ def dashboard():
 # ---------------------------------------------------------
 # 🧑‍🏫 Teacher: Dashboard + Detail
 # ---------------------------------------------------------
+
 @app.route("/teacher")
 @login_required
 @teacher_required
 def teacher_dashboard():
-    students = User.query.filter(User.role != "teacher").all()
+    # nur Schüler (keine Lehrer)
+    students = (
+        User.query
+        .filter(User.role != "teacher")
+        .order_by(User.username.asc())
+        .all()
+    )
+    student_ids = [u.id for u in students]
 
-    stats = (
+    if not student_ids:
+        return render_template("teacher_dashboard.html", rows=[])
+
+    # ---------
+    # Basisstats: Gesamtversuche + letzte Aktivität (ALLE Result-Einträge)
+    # ---------
+    base_stats = (
         db.session.query(
             Result.user_id.label("user_id"),
-            func.count(Result.id).label("attempts"),
+            func.count(Result.id).label("attempts_total"),
             func.max(Result.created_at).label("last_activity"),
         )
+        .filter(Result.user_id.in_(student_ids))
         .group_by(Result.user_id)
         .all()
     )
-    stats_map = {s.user_id: s for s in stats}
+    base_map = {s.user_id: s for s in base_stats}
 
+    # ---------
+    # Helper: best + attempts pro Bereich (nur RUNs)
+    # ---------
+    def best_map_for(quiz_name: str):
+        rows = (
+            db.session.query(Result.user_id, func.max(Result.points))
+            .filter(Result.user_id.in_(student_ids), Result.quiz_name == quiz_name)
+            .group_by(Result.user_id)
+            .all()
+        )
+        return {uid: int(points or 0) for (uid, points) in rows}
+
+    def attempts_map_for(quiz_name: str):
+        rows = (
+            db.session.query(Result.user_id, func.count(Result.id))
+            .filter(Result.user_id.in_(student_ids), Result.quiz_name == quiz_name)
+            .group_by(Result.user_id)
+            .all()
+        )
+        return {uid: int(cnt or 0) for (uid, cnt) in rows}
+
+    dia_best_map = best_map_for("DIA_RUN")
+    dv_best_map  = best_map_for("DV_RUN")
+    prg_best_map = best_map_for("PRG_RUN")
+
+    dia_attempts_map = attempts_map_for("DIA_RUN")
+    dv_attempts_map  = attempts_map_for("DV_RUN")
+    prg_attempts_map = attempts_map_for("PRG_RUN")
+
+    # ---------
+    # rows fürs Template
+    # ---------
     rows = []
     for u in students:
-        st = stats_map.get(u.id)
-        rows.append(
-            {
-                "user": u,
-                "total_points": int(getattr(u, "total_points", 0) or 0),
-                "attempts": int(st.attempts) if st else 0,
-                "last_activity": st.last_activity if st else None,
-            }
-        )
+        st = base_map.get(u.id)
 
-    rows.sort(key=lambda r: (r["last_activity"] is None, r["last_activity"]), reverse=True)
+        dia_best = dia_best_map.get(u.id, 0)
+        dv_best  = dv_best_map.get(u.id, 0)
+        prg_best = prg_best_map.get(u.id, 0)
+
+        best_sum = dia_best + dv_best + prg_best
+
+        rows.append({
+            "user": u,
+
+            "dia_best": dia_best,
+            "dv_best": dv_best,
+            "prg_best": prg_best,
+            "best_sum": best_sum,
+
+            "dia_attempts": dia_attempts_map.get(u.id, 0),
+            "dv_attempts": dv_attempts_map.get(u.id, 0),
+            "prg_attempts": prg_attempts_map.get(u.id, 0),
+
+            "attempts_total": int(st.attempts_total) if st else 0,
+            "last_activity": st.last_activity if st else None,
+        })
+
+    # Sortierung: erst best_sum absteigend, dann letzte Aktivität (neueste zuerst)
+    rows.sort(
+        key=lambda r: (
+            r["best_sum"],
+            r["last_activity"] is not None,  # True > False
+            r["last_activity"] or 0,
+        ),
+        reverse=True,
+    )
+
     return render_template("teacher_dashboard.html", rows=rows)
 
 
@@ -214,8 +284,52 @@ def teacher_dashboard():
 @teacher_required
 def teacher_student_detail(user_id):
     student = User.query.get_or_404(user_id)
-    results = Result.query.filter_by(user_id=user_id).order_by(Result.created_at.desc()).all()
-    return render_template("teacher_student_detail.html", student=student, results=results)
+
+    # optional: Lehrer nicht als "Schülerdetails" anzeigen
+    if getattr(student, "role", "student") == "teacher":
+        abort(404)
+
+    results = (
+        Result.query
+        .filter_by(user_id=user_id)
+        .order_by(Result.created_at.desc())
+        .all()
+    )
+
+    def best_for(quiz_name: str) -> int:
+        return int(
+            db.session.query(func.max(Result.points))
+            .filter_by(user_id=user_id, quiz_name=quiz_name)
+            .scalar() or 0
+        )
+
+    def attempts_for(quiz_name: str) -> int:
+        return int(
+            db.session.query(func.count(Result.id))
+            .filter_by(user_id=user_id, quiz_name=quiz_name)
+            .scalar() or 0
+        )
+
+    dia_best = best_for("DIA_RUN")
+    dv_best  = best_for("DV_RUN")
+    prg_best = best_for("PRG_RUN")
+
+    dia_attempts = attempts_for("DIA_RUN")
+    dv_attempts  = attempts_for("DV_RUN")
+    prg_attempts = attempts_for("PRG_RUN")
+
+    return render_template(
+        "teacher_student_detail.html",
+        student=student,
+        results=results,
+        dia_best=dia_best,
+        dv_best=dv_best,
+        prg_best=prg_best,
+        dia_attempts=dia_attempts,
+        dv_attempts=dv_attempts,
+        prg_attempts=prg_attempts,
+    )
+
 
 
 # ---------------------------------------------------------

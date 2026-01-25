@@ -1,22 +1,57 @@
 {% extends "base.html" %}
+{% block title %}Schülerdetails{% endblock %}
 
 {% block content %}
 
-<div class="card topic-row">
+<section class="card topic-row">
   <div>
     <h2>Schülerdetails: {{ student.username }}</h2>
     <p class="text-muted">
-      Hier siehst du alle Versuche und Punkte dieses Schülers.
+      Übersicht der Bestleistungen und aller gespeicherten Versuche (mit Zeitstempel).
     </p>
   </div>
 
   <div class="topic-actions">
     <a class="btn btn-outline" href="{{ url_for('teacher_dashboard') }}">Zurück</a>
   </div>
-</div>
+</section>
 
 <section class="card">
-  <h3>Ergebnisse</h3>
+  <h3>Bestwerte & Versuche</h3>
+
+  <div class="stats-grid mt-3">
+    <div class="stat">
+      <div class="label">DIA – Bestwert</div>
+      <div class="value">{{ dia_best }}</div>
+      <div class="label mt-2">DIA – Versuche</div>
+      <div class="value" style="font-size:1.1rem;">{{ dia_attempts }}</div>
+    </div>
+
+    <div class="stat">
+      <div class="label">DV – Bestwert</div>
+      <div class="value">{{ dv_best }}</div>
+      <div class="label mt-2">DV – Versuche</div>
+      <div class="value" style="font-size:1.1rem;">{{ dv_attempts }}</div>
+    </div>
+
+    <div class="stat">
+      <div class="label">PRG – Bestwert</div>
+      <div class="value">{{ prg_best }}</div>
+      <div class="label mt-2">PRG – Versuche</div>
+      <div class="value" style="font-size:1.1rem;">{{ prg_attempts }}</div>
+    </div>
+
+    <div class="stat">
+      <div class="label">Summe Bestwerte</div>
+      <div class="value">{{ dia_best + dv_best + prg_best }}</div>
+      <div class="label mt-2">Summe Versuche (Runs)</div>
+      <div class="value" style="font-size:1.1rem;">{{ dia_attempts + dv_attempts + prg_attempts }}</div>
+    </div>
+  </div>
+</section>
+
+<section class="card">
+  <h3>Alle Ergebnisse (Verlauf)</h3>
 
   {% if results and results|length > 0 %}
     <div style="overflow-x:auto;">

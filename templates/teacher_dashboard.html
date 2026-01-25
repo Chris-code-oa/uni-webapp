@@ -1,46 +1,83 @@
 {% extends "base.html" %}
+{% block title %}Schülerübersicht{% endblock %}
 
 {% block content %}
 
 <section class="card">
-  <h2>Lehrer-Dashboard</h2>
+  <h2>Schülerübersicht</h2>
   <p class="text-muted">
-    Übersicht über die Aktivitäten und Ergebnisse der Schüler.
+    Hier siehst du pro Schüler die <strong>Bestwerte</strong> (Max. Punkte) je Lernbereich
+    sowie <strong>Versuche</strong> (Anzahl Durchläufe). Die Sortierung erfolgt nach
+    <strong>Summe Bestwerte</strong> (absteigend).
   </p>
 </section>
 
 <section class="card">
-  <h3>Schülerübersicht</h3>
-
   {% if rows and rows|length > 0 %}
     <div style="overflow-x:auto;">
       <table class="table-clean">
         <thead>
           <tr>
+            <th>#</th>
             <th>Schüler</th>
-            <th>DIA-Punkte</th>
-            <th>Gesamtpunkte</th>
-            <th>Versuche</th>
+
+            <th>DIA Best</th>
+            <th>DIA Versuche</th>
+
+            <th>DV Best</th>
+            <th>DV Versuche</th>
+
+            <th>PRG Best</th>
+            <th>PRG Versuche</th>
+
+            <th>Summe Best</th>
+            <th>Gesamtversuche</th>
             <th>Letzte Aktivität</th>
             <th>Details</th>
           </tr>
         </thead>
+
         <tbody>
           {% for r in rows %}
+            {% set total_attempts = (r.dia_attempts + r.dv_attempts + r.prg_attempts) %}
+
             <tr>
-              <td><strong>{{ r.user.username }}</strong></td>
-              <td>{{ r.dia_points }}</td>
-              <td>{{ r.total_points }}</td>
-              <td>{{ r.attempts }}</td>
+              <td><strong>{{ loop.index }}</strong></td>
+
+              <td>
+                {{ r.user.username }}
+              </td>
+
+              <td>{{ r.dia_best }}</td>
+              <td>{{ r.dia_attempts }}</td>
+
+              <td>{{ r.dv_best }}</td>
+              <td>{{ r.dv_attempts }}</td>
+
+              <td>{{ r.prg_best }}</td>
+              <td>{{ r.prg_attempts }}</td>
+
+              <td><strong>{{ r.best_sum }}</strong></td>
+
+              <td>
+                {% if r.attempts_total is not none %}
+                  {{ r.attempts_total }}
+                {% else %}
+                  0
+                {% endif %}
+              </td>
+
               <td>
                 {% if r.last_activity %}
                   {{ r.last_activity.strftime("%d.%m.%Y %H:%M") }}
                 {% else %}
-                  <span class="text-muted">–</span>
+                  –
                 {% endif %}
               </td>
+
               <td>
-                <a class="btn btn-small" href="{{ url_for('teacher_student_detail', user_id=r.user.id) }}">
+                <a class="btn btn-primary btn-small"
+                   href="{{ url_for('teacher_student_detail', user_id=r.user.id) }}">
                   Anzeigen
                 </a>
               </td>
@@ -49,8 +86,9 @@
         </tbody>
       </table>
     </div>
+
   {% else %}
-    <p class="text-muted">Noch keine Schüleraktivitäten vorhanden.</p>
+    <p class="text-muted">Noch keine Schülerdaten vorhanden.</p>
   {% endif %}
 </section>
 
